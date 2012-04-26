@@ -1,0 +1,28 @@
+start =
+    comment? whitespace* e:expression whitespace*
+      { return e; }
+
+comment =
+  ";;" [^\n]*
+
+whitespace = 
+  [ \t]
+  / "\n" comment?
+
+validchar
+    = [0-9a-zA-Z_?!+-=@#$%^&*/.]
+
+atom =
+    chars:validchar+
+        { return chars.join(""); }
+
+spaceexpression = 
+  whitespace+ expr:expression
+      {return expr; }
+
+expression =
+  atom
+  / "'" expr:expression
+    { return [ "quote", expr ]; }
+  / "(" whitespace* first:expression rest:spaceexpression* whitespace* ")"
+    { return [ first ].concat(rest); }
