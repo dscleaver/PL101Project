@@ -1,6 +1,6 @@
 var scheemBuiltins = {};
 
-var evalScheem = function (expr, env) {
+evalScheem = function (expr, env) {
     // Numbers evaluate to themselves
     if (typeof expr === 'number') {
         return expr;

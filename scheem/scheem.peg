@@ -14,7 +14,13 @@ validchar
 
 atom =
     chars:validchar+
-        { return chars.join(""); }
+        { var value = chars.join("");
+          var numVal = parseFloat(value);
+          if(isNaN(numVal)) {
+            numVal = parseInt(value);
+            if(isNaN(numVal)) return value;
+          } 
+          return numVal; }
 
 spaceexpression = 
   whitespace+ expr:expression
