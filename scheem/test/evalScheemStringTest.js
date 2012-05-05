@@ -1,10 +1,10 @@
 if(typeof module !== 'undefined') {
   var chai = require('chai');
-  var evalScheem = require('../scheem').evalScheem;
+  var evalScheemString = require('../scheem').evalScheemString;
 } 
 var assert = chai.assert;
 
-suite('Eval Scheem String Tests', function() {
+suite('Eval String Tests', function() {
   test('parse errors are propagated', function() {
     assert.throw(function() {
       evalScheemString("(+ 3", {});

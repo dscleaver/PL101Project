@@ -4,7 +4,7 @@ if(typeof module !== 'undefined') {
 
 var scheemBuiltins = {};
 
-evalScheem = function (expr, env) {
+var evalScheem = function (expr, env) {
     // Numbers evaluate to themselves
     if (typeof expr === 'number') {
         return expr;
@@ -27,7 +27,7 @@ evalScheem = function (expr, env) {
     throw "Unknown operation " + expr[0];
 };
 
-evalScheemString = function(expr, env) {
+var evalScheemString = function(expr, env) {
   return evalScheem(parseScheem(expr), env);
 }
 
@@ -173,4 +173,5 @@ scheemBuiltins['begin'] = function(expr, env) {
 
 if(typeof module !== 'undefined') {
   module.exports.evalScheem = evalScheem;
+  module.exports.evalScheemString = evalScheemString;
 }
