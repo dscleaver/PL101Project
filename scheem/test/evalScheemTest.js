@@ -5,6 +5,12 @@ if(typeof module !== 'undefined') {
 var assert = chai.assert;
 
 suite('Eval Tests', function() {
+  test('no matching operation for list throws exception', function() {
+    assert.throws(function() {
+      evalScheem(['unknown', 2, 3], {});
+    });
+  });
+
   suite('quote', function() {
     test('a number', function() {
       assert.deepEqual(

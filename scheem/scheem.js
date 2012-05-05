@@ -1,3 +1,7 @@
+if(typeof module !== 'undefined') {
+  var parseScheem = require('./parser').parseScheem;
+}
+
 var scheemBuiltins = {};
 
 evalScheem = function (expr, env) {
@@ -20,8 +24,12 @@ evalScheem = function (expr, env) {
       }
       return builtin(expr, env);
     }
-    return 0;
+    throw "Unknown operation " + expr[0];
 };
+
+evalScheemString = function(expr, env) {
+  return evalScheem(parseScheem(expr), env);
+}
 
 var addBuiltin = function(name, func, argLength) {
   func.argLength = argLength;
