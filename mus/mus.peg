@@ -1,0 +1,54 @@
+start = 
+  whitespace* expr:parallel whitespace*
+    { return expr; }
+
+parallel =
+  left:sequence parallel_op right:parallel
+    { return { tag: "par", left: left, right: right }; }
+/ sequence
+
+sequence =
+  left:repeat sequence_op right:sequence
+    { return { tag: "seq", left: left, right: right }; }
+/ repeat
+
+repeat =
+  expr:value repeat_op times:number
+    { return { tag: "repeat", section: expr, count: times }; } 
+/ value
+
+value = 
+  note
+/ rest
+/ "(" whitespace* expr:parallel whitespace* ")"
+  { return expr; }
+
+note = 
+  pitch:pitch "[" duration:number "]"
+    { return { tag: "note", pitch: pitch, dur: duration }; }
+
+rest = 
+  "[" duration:number "]"
+    { return { tag: "rest", duration: duration }; }
+
+pitch = 
+  n:[a-g] s:[0-7]
+    { return n + s; }
+/ n:[a-c] s:"8"
+    { return n + s; }
+
+number =
+  first:[1-9] rest:[0-9]*
+    { return first + rest.join(""); }
+
+sequence_op =
+  whitespace+
+
+parallel_op = 
+  whitespace* "|" whitespace*
+
+repeat_op =
+  whitespace* "*" whitespace*
+
+whitespace = 
+  [ \n\t]
