@@ -2,6 +2,36 @@ if(typeof module !== 'undefined') {
   var parseScheem = require('./parser').parseScheem;
 }
 
+var lookup = function (env, v) {
+    if(env === null) {
+      return null;
+    }
+    if(env.name === v) {
+      return env.value;
+    }
+    return lookup(env.outer, v);
+};
+
+var update = function (env, v, val) {
+    if(env === null) {
+      throw "Variable " + expr[1] + " is not defined";
+    }
+    if(env.name === v) {
+      env.value = val;
+    } else {
+      update(env.outer, v, val);
+    }
+};
+
+var add_binding = function (env, v, val) {
+    env.outer = { name: env.name,
+                 value: env.value,
+                 outer: env.outer
+                };
+    env.name = v;
+    env.value = val;
+};
+
 var scheemBuiltins = {};
 
 var evalScheem = function (expr, env) {
@@ -10,9 +40,9 @@ var evalScheem = function (expr, env) {
         return expr;
     }
     if(typeof expr === 'string') {
-      var value = env[expr];
-      if(typeof value === 'undefined') {
-        throw "Variable " + expr + " is not defined";
+      var value = lookup(env, expr);
+      if(value === null) {
+        throw "Variable " + expr + " is not defined.";
       }
       return value;
     }
@@ -44,10 +74,10 @@ addBuiltin('define', function(expr, env) {
   if(typeof expr[1] !== 'string') {
     throw "The first argument to define must be a variable but was " + JSON.stringify(expr[1]);
   }
-  if(typeof env[expr[1]] !== 'undefined') {
+  if(lookup(env, expr[1]) !== null) {
     throw expr[1] + " is already defined.";
-  } 
-  env[expr[1]] = evalScheem(expr[2], env);
+  }
+  add_binding(env, expr[1], evalScheem(expr[2], env));
   return 0;
 }, 2);
 
@@ -55,10 +85,7 @@ addBuiltin('set!', function(expr, env) {
   if(typeof expr[1] !== 'string') {
     throw "The first argument to set! must be a variable but was " + JSON.stringify(expr[1]);
   }
-  if(typeof env[expr[1]] === 'undefined') {
-    throw "Variable " + expr[1] + " is not defined";
-  }
-  env[expr[1]] = evalScheem(expr[2], env);
+  update(env, expr[1], evalScheem(expr[2], env));
   return 0;
 }, 2);
 
@@ -174,4 +201,5 @@ scheemBuiltins['begin'] = function(expr, env) {
 if(typeof module !== 'undefined') {
   module.exports.evalScheem = evalScheem;
   module.exports.evalScheemString = evalScheemString;
+  module.exports.lookup = lookup;
 }

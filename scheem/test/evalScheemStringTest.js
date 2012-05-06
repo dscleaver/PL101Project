@@ -23,7 +23,7 @@ suite('Eval String Tests', function() {
   });
   test('environment is passed to eval', function() {
     assert.deepEqual(
-      evalScheemString("(* x x)", { x:4 }),
+      evalScheemString("(* x x)", { name: 'x', value:4, outer: null }),
       16
     );
   });

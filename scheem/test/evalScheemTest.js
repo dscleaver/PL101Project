@@ -1,6 +1,8 @@
 if(typeof module !== 'undefined') {
   var chai = require('chai');
-  var evalScheem = require('../scheem').evalScheem;
+  var scheem = require('../scheem');
+  var evalScheem = scheem.evalScheem;
+  var lookup = scheem.lookup; 
 } 
 var assert = chai.assert;
 
@@ -42,16 +44,18 @@ suite('Eval Tests', function() {
 
   suite('define', function() {
     test('creates a variable with the specified value', function() {
-      var env = {};
+      var env = { name: 'y',
+                  value: 5,
+                  outer: null };
       evalScheem(['define', 'x', 3], env);
       assert.deepEqual(
-        env['x'],
+        lookup(env, 'x'),
         3
       );
     });
     test('returns zero as the result', function() {
       assert.deepEqual(
-        evalScheem(['define', 'x', 3], {}),
+        evalScheem(['define', 'x', 3], { name: 'y', value: 5, outer: null }),
         0
       );
     });
@@ -78,32 +82,66 @@ suite('Eval Tests', function() {
   suite('variable references', function() {
     test('evaluate to their value in the environment', function() {
       assert.deepEqual(
-        evalScheem('x', { x: [1, 2, 3] }),
+        evalScheem('x', { name: 'x', value: [1, 2, 3], outer: null }),
         [1,2,3]
+      );
+    });
+    test('evaluate to the first binding in the environment', function() {
+      assert.deepEqual(
+        evalScheem('x', { name: 'x', 
+                          value: 3,
+                          outer: { name: 'x',
+                                   value: 5,
+                                   outer: null }}),
+        3
+      );
+    }); 
+    test('search back through the environments to find a binding', function() {
+      assert.deepEqual(
+        evalScheem('x', { name: 'y', 
+                          value: 3,
+                          outer: { name: 'x',
+                                   value: 5,
+                                   outer: null }}),
+        5
       );
     });
     test('throw an exception if the variable is not bound', function() {
       assert.throw(function() {
-        evalScheem('x', {});
+        evalScheem('x', { name: 'y', value: 3, outer: null });
       });
     });
   });
 
   suite('set!', function() {
     test('changes the value of a variable', function() {
-      var env = { y: 5 };
+      var env = { name: 'y', value: 5, outer: null };
       evalScheem(['set!', 'y', 10], env);
       assert.deepEqual(
-        env['y'],
+        lookup(env, 'y'),
         10
       );
     });
     test('returns zero as the result', function() {
       assert.deepEqual(
-        evalScheem(['set!', 'y', 10], { y: 5 }),
+        evalScheem(['set!', 'y', 10], { name: 'y', value: 5, outer: null }),
         0
       );
     });
+    test('changes the value in the first found binding', function() {
+      var outer = { name: 'y', value: 6, outer: null};
+      var env = { name: 'y', value: 5, outer: outer };
+      evalScheem(['set!', 'y', 10], env);
+      assert.deepEqual( outer.value, 6);
+      assert.deepEqual( env.value, 10);
+    }); 
+    test('changes the value in the first environment its found in', function() {
+      var outer = { name: 'y', value: 6, outer: null };
+      var env = { name: 'x', value: 5, outer: outer };
+      evalScheem(['set!', 'y', 10], env);
+      assert.deepEqual( outer.value, 10);
+      assert.deepEqual( env.value, 5);
+    }); 
     test('fails if the first argument is not a variable', function() {
       assert.throw(function() {
         evalScheem(['set!', ['y'], 5], { y: 10 });
@@ -111,7 +149,7 @@ suite('Eval Tests', function() {
     });
     test('fails if the variable is not already defined', function() {
       assert.throw(function() {
-        evalScheem(['set!', 'y', 5], {});
+        evalScheem(['set!', 'y', 5], { name: 'x', value: 7, outer: null });
       });
     });
   });
@@ -510,12 +548,12 @@ suite('Eval Tests', function() {
       );
     });
     test('evaluates only the conditional and the chosen expressions', function() {
-      var env = {};
+      var env = { outer: null };
       evalScheem(['if', ['=', 1, 1], ['define', 'x', 2], ['define', 'y', 3]], env);
-      assert.deepEqual(undefined, env.y);
-      env = {};
+      assert.isNull(lookup(env, 'y'));
+      env = { outer: null };
       evalScheem(['if', ['=', 1, 2], ['define', 'x', 2], ['define', 'y', 3]], env);
-      assert.deepEqual(undefined, env.x);
+      assert.isNull(lookup(env, 'x'));
     });
     test('fails if not given 3 arguments', function() {
       assert.throw(function() {
@@ -540,9 +578,9 @@ suite('Eval Tests', function() {
       );
     });
     test('evaluates all of its arguments in order', function() {
-      var env = {};
+      var env = { name: 'y', value: 2, outer: null };
       evalScheem(['begin', ['define', 'x', 2], ['set!', 'x', 3]], env);
-      assert.deepEqual(3, env.x);
+      assert.deepEqual(3, env.value);
     });
     test('returns the value of the last expression', function() {
       assert.deepEqual(
@@ -551,4 +589,16 @@ suite('Eval Tests', function() {
       );
     });
   });
+
+/*  suite('functions', function() {
+    test('of one argument in the environment can be executed', function() {
+      var env = { name: 'plus-one',
+                  value: function(x) { return x + 1; }
+                  outer: null };
+      assert.deepEqual(
+        evalScheem(['plus-one', 4], env),
+        5
+      );
+    });
+  });*/
 });
