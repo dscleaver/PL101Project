@@ -6,8 +6,9 @@ var lookup = function (env, v) {
     if(env === null) {
       return null;
     }
-    if(env.name === v) {
-      return env.value;
+    var val = env.bindings[v];
+    if(typeof val !== 'undefined') {
+      return val;
     }
     return lookup(env.outer, v);
 };
@@ -16,26 +17,22 @@ var update = function (env, v, val) {
     if(env === null) {
       throw "Variable " + expr[1] + " is not defined";
     }
-    if(env.name === v) {
-      env.value = val;
+    var bound = env.bindings[v];
+    if(typeof bound !== 'undefined') {
+      env.bindings[v] = val;
     } else {
       update(env.outer, v, val);
     }
 };
 
 var add_binding = function (env, v, val) {
-    env.outer = { name: env.name,
-                 value: env.value,
-                 outer: env.outer
-                };
-    env.name = v;
-    env.value = val;
+    env.bindings[v] = val;
 };
 
 var scheemBuiltins = {};
 
 var evalScheem = function (expr, env) {
-    env = env || { name: undefined, outer: null };
+    env = env || { bindings: {}, outer: null };
     // Numbers evaluate to themselves
     if (typeof expr === 'number') {
         return expr;
@@ -226,12 +223,9 @@ addSpecialForm('lambda', function(expr, env) {
     if(arguments.length !== args.length) {
       throw "Wrong number of arguments to " + meta.name + " expected " + args.length + " and received " + arguments.length;
     }
-    var functionEnv = env;
+    var functionEnv = { bindings: {}, outer: env };
     for(var i = 0; i < arguments.length; i++) {
-      functionEnv = { name: args[i],
-                     value: arguments[i],
-                     outer: functionEnv 
-                    }; 
+      functionEnv.bindings[args[i]] = arguments[i];
     }
     return evalScheem(body, functionEnv);
   };
