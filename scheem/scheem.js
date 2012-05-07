@@ -19,9 +19,19 @@ var prettyPrint = function(value) {
   return "(" + values.join(" ") + ")";
 }; 
 
+var globalEnv = { bindings: {}, outer: null };
+
+var globalLookup = function(v) {
+  var val = globalEnv.bindings[v];
+  if(typeof val !== 'undefined') {
+    return val;
+  }
+  return null;
+};
+
 var lookup = function (env, v) {
     if(env === null) {
-      return null;
+      return globalLookup(v);
     }
     var val = env.bindings[v];
     if(typeof val !== 'undefined') {
@@ -32,7 +42,10 @@ var lookup = function (env, v) {
 
 var update = function (env, v, val) {
     if(env === null) {
-      throw "Variable " + expr[1] + " is not defined";
+      if(globalLookup(v) !== null) {
+        throw "Can not change built in value " + v;
+      }
+      throw "Variable " + v + " is not defined";
     }
     var bound = env.bindings[v];
     if(typeof bound !== 'undefined') {
@@ -48,10 +61,8 @@ var add_binding = function (env, v, val) {
 
 var scheemSpecialForms = {};
 
-var globalEnv = { bindings: {}, outer: null };
-
 var evalScheem = function (expr, env) {
-    env = env || { bindings: {}, outer: globalEnv };
+    env = env || { bindings: {}, outer: null };
     // Numbers evaluate to themselves
     if (typeof expr === 'number') {
         return expr;
@@ -279,5 +290,5 @@ if(typeof module !== 'undefined') {
   module.exports.evalScheem = evalScheem;
   module.exports.evalScheemString = evalScheemString;
   module.exports.lookup = lookup;
-  module.exports.globalEnv = globalEnv;
+  module.exports.globalEnv = null;
 }
