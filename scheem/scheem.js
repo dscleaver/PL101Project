@@ -2,6 +2,23 @@ if(typeof module !== 'undefined') {
   var parseScheem = require('./parser').parseScheem;
 }
 
+var prettyPrint = function(value) {
+  if(typeof value === 'string') {
+    return value;
+  }
+  if(typeof value === 'number') {
+    return value;
+  }
+  if(typeof value === 'function') {
+    return value.meta.displayString();
+  }
+  var values = [];
+  for(var i in value) {
+    values.push(prettyPrint(value[i]));
+  }
+  return "(" + values.join(" ") + ")";
+}; 
+
 var lookup = function (env, v) {
     if(env === null) {
       return null;
@@ -129,7 +146,11 @@ addSpecialForm('lambda', function(expr, env) {
     throw "The first argument to lambda must be a list of arguments";
   }
   var body = expr[2];
-  var meta = { name: "function" };
+  var meta = { name: "function",
+               displayString: function() {
+                 return "[" + this.name + ": " + prettyPrint(expr) + "]";
+               }
+             };
   var func = function() {
     if(arguments.length !== args.length) {
       throw "Wrong number of arguments to " + meta.name + " expected " + args.length + " and received " + arguments.length;
@@ -155,7 +176,11 @@ var argLengthWrapper = function(name, func, argLength) {
     
 var define = function(name, func, argLength) {
   var wrapped = argLengthWrapper(name, func, argLength);
-  wrapped.meta = { name: name };
+  wrapped.meta = { name: name,
+                   displayString: function() {
+                     return "[" + this.name + ": built in]";
+                   }
+                 };
   globalEnv.bindings[name] = wrapped;
 }
 
@@ -247,6 +272,7 @@ define('alert', function(v) {
   } else {
     window.alert(toShow);
   }
+  return 0;
 }, 1);
 
 if(typeof module !== 'undefined') {
