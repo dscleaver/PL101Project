@@ -75,7 +75,7 @@ exactly one expression. An expression can be a single atom (numbers or symbols c
             var parsed = parseScheem(user_text);
             log_console('Parsed: ' + JSON.stringify(parsed));
             try {
-                var result = evalScheem(parsed, {});
+                var result = evalScheem(parsed);
                 log_console('Result: ' + JSON.stringify(result));
             }
             catch(e) {

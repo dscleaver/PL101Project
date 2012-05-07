@@ -69,5 +69,11 @@ suite('Parser Tests', function() {
       parseScheem("(1.2)"),
       [1.2]
     );
-  }); 
+  });
+  test('parses empty list', function() {
+    assert.deepEqual(
+      parseScheem("()"),
+      []
+    );
+  });
 });

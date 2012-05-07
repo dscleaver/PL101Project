@@ -30,5 +30,7 @@ expression =
   atom
   / "'" expr:expression
     { return [ "quote", expr ]; }
+  / "(" ")"
+    { return []; }
   / "(" whitespace* first:expression rest:spaceexpression* whitespace* ")"
     { return [ first ].concat(rest); }
