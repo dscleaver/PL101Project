@@ -3,8 +3,8 @@ if(typeof module !== 'undefined') {
   var scheem = require('../scheem');
   var evalScheem = scheem.evalScheem;
   var lookup = scheem.lookup; 
+  var globalEnv = scheem.globalEnv;
 } 
-var globalEnv = null;
 var assert = chai.assert;
 
 suite('Eval Tests', function() {
@@ -552,10 +552,10 @@ suite('Eval Tests', function() {
       );
     });
     test('evaluates only the conditional and the chosen expressions', function() {
-      var env = { bindings: {}, outer: null };
+      var env = { bindings: {}, outer: globalEnv };
       evalScheem(['if', ['=', 1, 1], ['define', 'x', 2], ['define', 'y', 3]], env);
       assert.isNull(lookup(env, 'y'));
-      env = { bindings: {}, outer: null };
+      env = { bindings: {}, outer: globalEnv };
       evalScheem(['if', ['=', 1, 2], ['define', 'x', 2], ['define', 'y', 3]], env);
       assert.isNull(lookup(env, 'x'));
     });

@@ -1,7 +1,8 @@
 if(typeof module !== 'undefined') {
   var chai = require('chai');
-  var evalScheemString = require('../scheem').evalScheemString;
-  var globalEnv = null;
+  var scheem = require('../scheem');
+  var evalScheemString = scheem.evalScheemString;
+  var globalEnv = scheem.globalEnv;
 } 
 var assert = chai.assert;
 

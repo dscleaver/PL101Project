@@ -29,10 +29,12 @@ var add_binding = function (env, v, val) {
     env.bindings[v] = val;
 };
 
-var scheemBuiltins = {};
+var scheemSpecialForms = {};
+
+var globalEnv = { bindings: {}, outer: null };
 
 var evalScheem = function (expr, env) {
-    env = env || { bindings: {}, outer: null };
+    env = env || { bindings: {}, outer: globalEnv };
     // Numbers evaluate to themselves
     if (typeof expr === 'number') {
         return expr;
@@ -44,9 +46,9 @@ var evalScheem = function (expr, env) {
       }
       return value;
     }
-    var builtin = scheemBuiltins[expr[0]];
-    if(typeof builtin === 'function') {
-      return builtin(expr, env);
+    var specialForm = scheemSpecialForms[expr[0]];
+    if(typeof specialForm === 'function') {
+      return specialForm(expr, env);
     }
    
     var funct = evalScheem(expr[0], env);
@@ -74,7 +76,7 @@ var specialFormArgLengthWrapper = function(func, argLength) {
 };
 
 var addSpecialForm = function(name, func, argLength) {
-  scheemBuiltins[name] = specialFormArgLengthWrapper(func, argLength);
+  scheemSpecialForms[name] = specialFormArgLengthWrapper(func, argLength);
 }
 
 addSpecialForm('quote', function(expr, env) {
@@ -103,97 +105,6 @@ addSpecialForm('set!', function(expr, env) {
   update(env, expr[1], evalScheem(expr[2], env));
   return 0;
 }, 2);
-
-var addNumberOp = function(name, op) {
-  addSpecialForm(name, function(expr, env) {
-    var v1 = evalScheem(expr[1], env); 
-    var v2 = evalScheem(expr[2], env);
-    if(typeof v1 !== 'number' || typeof v2 !== 'number') {
-      throw "Arguments to " + name + " must be numbers, given " + JSON.stringify(v1) + " and " + JSON.stringify(v2);;
-    }
-    return op(v1, v2);
-  }, 2);
-};
-
-addNumberOp('+', function(v1, v2) { return v1 + v2; });
-addNumberOp('*', function(v1, v2) { return v1 * v2; });
-addNumberOp('-', function(v1, v2) { return v1 - v2; });
-addNumberOp('/', function(v1, v2) { 
-  if(v2 === 0) {
-    throw "Can not divide by zero"
-  }
-  return v1 / v2; 
-});
-
-var deepEqual = function(v1, v2) {
-  if(v1 === v2) {
-    return true;
-  }
-  if(v1 instanceof Array && v2 instanceof Array && v1.length === v2.length) {
-    for(var i = 0; i < v1.length; i++) {
-      if(!deepEqual(v1[i], v2[i])) {
-        return false;
-      }
-      return true;
-    }
-  }
-  return false;
-};
-
-addSpecialForm('=', function(expr, env) {
-  var v1 = evalScheem(expr[1], env);
-  var v2 = evalScheem(expr[2], env);
-  if(deepEqual(v1, v2)) return '#t';
-  return '#f';
-}, 2);
-
-var addNumComparisonOp = function(name, op) {
-  addSpecialForm(name, function(expr, env) {
-    var v1 = evalScheem(expr[1], env);
-    var v2 = evalScheem(expr[2], env);
-    if(typeof v1 !== 'number' || typeof v2 !== 'number') {
-      throw "Arguments to " + name + " must be numbers, given " + JSON.stringify(v1) + " and " + JSON.stringify(v2);
-    }
-    if(op(v1, v2)) return '#t';
-    return '#f';
-  }, 2);
-};  
-
-addNumComparisonOp('<', function(v1, v2) { return v1 < v2; });
-addNumComparisonOp('>', function(v1, v2) { return v1 > v2; });
-addNumComparisonOp('<=', function(v1, v2) { return v1 <= v2; });
-addNumComparisonOp('>=', function(v1, v2) { return v1 >= v2; });
-
-addSpecialForm('cons', function(expr, env) {
-  var element = evalScheem(expr[1], env);
-  var list = evalScheem(expr[2], env);
-  if(!(list instanceof Array)) {
-    throw "The second argument to cons must be a list was " + JSON.stringify(list);
-  }
-  return [ element ].concat(list);
-}, 2);
-
-addSpecialForm('car', function(expr, env) {
-  var list = evalScheem(expr[1], env);
-  if(!(list instanceof Array)) {
-    throw "The argument to car must be a list was " + JSON.stringify(list);
-  }
-  if(list.length === 0) {
-    throw "Can not call car on an empty list";
-  }
-  return list[0];
-}, 1);
-
-addSpecialForm('cdr', function(expr, env) {
-  var list = evalScheem(expr[1], env);
-  if(!(list instanceof Array)) {
-    throw "The argument to cdr must be a list was " + JSON.stringify(list);
-  }
-  if(list.length === 0) {
-    throw "Can not call cdr on an empty list";
-  }
-  return list.slice(1);
-}, 1);
 
 addSpecialForm('if', function(expr, env) {
   var cond = evalScheem(expr[1], env);
@@ -233,8 +144,114 @@ addSpecialForm('lambda', function(expr, env) {
   return func;
 }, 2);
 
+var argLengthWrapper = function(name, func, argLength) {
+  return function() {
+    if(arguments.length !== argLength) {
+      throw "Wrong number of arguments to " + name + " expected " + argLength + " and received " + arguments.length;
+    }
+    return func.apply(this, arguments);
+  };
+}
+    
+var define = function(name, func, argLength) {
+  var wrapped = argLengthWrapper(name, func, argLength);
+  wrapped.meta = { name: name };
+  globalEnv.bindings[name] = wrapped;
+}
+
+var addNumberOp = function(name, op) {
+  define(name, function(v1, v2) {
+    if(typeof v1 !== 'number' || typeof v2 !== 'number') {
+      throw "Arguments to " + name + " must be numbers, given " + JSON.stringify(v1) + " and " + JSON.stringify(v2);;
+    }
+    return op(v1, v2);
+  }, 2);
+};
+
+addNumberOp('+', function(v1, v2) { return v1 + v2; });
+addNumberOp('*', function(v1, v2) { return v1 * v2; });
+addNumberOp('-', function(v1, v2) { return v1 - v2; });
+addNumberOp('/', function(v1, v2) { 
+  if(v2 === 0) {
+    throw "Can not divide by zero"
+  }
+  return v1 / v2; 
+});
+
+var deepEqual = function(v1, v2) {
+  if(v1 === v2) {
+    return true;
+  }
+  if(v1 instanceof Array && v2 instanceof Array && v1.length === v2.length) {
+    for(var i = 0; i < v1.length; i++) {
+      if(!deepEqual(v1[i], v2[i])) {
+        return false;
+      }
+      return true;
+    }
+  }
+  return false;
+};
+
+define('=', function(v1, v2) {
+  if(deepEqual(v1, v2)) return '#t';
+  return '#f';
+}, 2);
+
+var addNumComparisonOp = function(name, op) {
+  define(name, function(v1, v2) {
+    if(typeof v1 !== 'number' || typeof v2 !== 'number') {
+      throw "Arguments to " + name + " must be numbers, given " + JSON.stringify(v1) + " and " + JSON.stringify(v2);
+    }
+    if(op(v1, v2)) return '#t';
+    return '#f';
+  }, 2);
+};  
+
+addNumComparisonOp('<', function(v1, v2) { return v1 < v2; });
+addNumComparisonOp('>', function(v1, v2) { return v1 > v2; });
+addNumComparisonOp('<=', function(v1, v2) { return v1 <= v2; });
+addNumComparisonOp('>=', function(v1, v2) { return v1 >= v2; });
+
+define('cons', function(element, list) {
+  if(!(list instanceof Array)) {
+    throw "The second argument to cons must be a list was " + JSON.stringify(list);
+  }
+  return [ element ].concat(list);
+}, 2);
+
+define('car', function(list) {
+  if(!(list instanceof Array)) {
+    throw "The argument to car must be a list was " + JSON.stringify(list);
+  }
+  if(list.length === 0) {
+    throw "Can not call car on an empty list";
+  }
+  return list[0];
+}, 1);
+
+define('cdr', function(list) {
+  if(!(list instanceof Array)) {
+    throw "The argument to cdr must be a list was " + JSON.stringify(list);
+  }
+  if(list.length === 0) {
+    throw "Can not call cdr on an empty list";
+  }
+  return list.slice(1);
+}, 1);
+
+define('alert', function(v) {
+  var toShow = prettyPrint(v);
+  if(typeof module !== 'undefined') {
+    console.log(toShow);
+  } else {
+    window.alert(toShow);
+  }
+}, 1);
+
 if(typeof module !== 'undefined') {
   module.exports.evalScheem = evalScheem;
   module.exports.evalScheemString = evalScheemString;
   module.exports.lookup = lookup;
+  module.exports.globalEnv = globalEnv;
 }
