@@ -35,6 +35,7 @@ var add_binding = function (env, v, val) {
 var scheemBuiltins = {};
 
 var evalScheem = function (expr, env) {
+    env = env || { name: undefined, outer: null };
     // Numbers evaluate to themselves
     if (typeof expr === 'number') {
         return expr;
@@ -48,40 +49,57 @@ var evalScheem = function (expr, env) {
     }
     var builtin = scheemBuiltins[expr[0]];
     if(typeof builtin === 'function') {
-      var argLength = builtin['argLength'];
-      if(typeof argLength !== 'undefined' && expr.length !== argLength + 1) {
-        throw "Wrong number of arguments to " + expr[1] + " expected " + argLength + " and received " + (expr.length - 1);
-      }
       return builtin(expr, env);
     }
-    throw "Unknown operation " + expr[0];
+   
+    var funct = evalScheem(expr[0], env);
+    var args = [];
+    for(var i = 1; i < expr.length; i++) {
+      args.push(evalScheem(expr[i], env));
+    }
+    return funct.apply(this, args);    
 };
 
 var evalScheemString = function(expr, env) {
   return evalScheem(parseScheem(expr), env);
 }
 
-var addBuiltin = function(name, func, argLength) {
-  func.argLength = argLength;
-  scheemBuiltins[name] = func;
+var specialFormArgLengthWrapper = function(func, argLength) {
+  if(typeof argLength === 'undefined') {
+    return func;
+  }
+  return function(expr, env) { 
+    if(expr.length !== argLength + 1) {
+      throw "Wrong number of arguments to " + expr[0] + " expected " + argLength + " and received " + (expr.length - 1);
+    }
+    return func(expr, env);
+  };
+};
+
+var addSpecialForm = function(name, func, argLength) {
+  scheemBuiltins[name] = specialFormArgLengthWrapper(func, argLength);
 }
 
-addBuiltin('quote', function(expr, env) {
+addSpecialForm('quote', function(expr, env) {
   return expr[1];
 }, 1);
 
-addBuiltin('define', function(expr, env) {
+addSpecialForm('define', function(expr, env) {
   if(typeof expr[1] !== 'string') {
     throw "The first argument to define must be a variable but was " + JSON.stringify(expr[1]);
   }
   if(lookup(env, expr[1]) !== null) {
     throw expr[1] + " is already defined.";
   }
-  add_binding(env, expr[1], evalScheem(expr[2], env));
+  var val = evalScheem(expr[2], env);
+  if(typeof val === 'function') {
+    val.meta.name = expr[1];
+  }
+  add_binding(env, expr[1], val);
   return 0;
 }, 2);
 
-addBuiltin('set!', function(expr, env) {
+addSpecialForm('set!', function(expr, env) {
   if(typeof expr[1] !== 'string') {
     throw "The first argument to set! must be a variable but was " + JSON.stringify(expr[1]);
   }
@@ -90,7 +108,7 @@ addBuiltin('set!', function(expr, env) {
 }, 2);
 
 var addNumberOp = function(name, op) {
-  addBuiltin(name, function(expr, env) {
+  addSpecialForm(name, function(expr, env) {
     var v1 = evalScheem(expr[1], env); 
     var v2 = evalScheem(expr[2], env);
     if(typeof v1 !== 'number' || typeof v2 !== 'number') {
@@ -114,7 +132,6 @@ var deepEqual = function(v1, v2) {
   if(v1 === v2) {
     return true;
   }
-  console.log(typeof v1);
   if(v1 instanceof Array && v2 instanceof Array && v1.length === v2.length) {
     for(var i = 0; i < v1.length; i++) {
       if(!deepEqual(v1[i], v2[i])) {
@@ -126,7 +143,7 @@ var deepEqual = function(v1, v2) {
   return false;
 };
 
-addBuiltin('=', function(expr, env) {
+addSpecialForm('=', function(expr, env) {
   var v1 = evalScheem(expr[1], env);
   var v2 = evalScheem(expr[2], env);
   if(deepEqual(v1, v2)) return '#t';
@@ -134,7 +151,7 @@ addBuiltin('=', function(expr, env) {
 }, 2);
 
 var addNumComparisonOp = function(name, op) {
-  addBuiltin(name, function(expr, env) {
+  addSpecialForm(name, function(expr, env) {
     var v1 = evalScheem(expr[1], env);
     var v2 = evalScheem(expr[2], env);
     if(typeof v1 !== 'number' || typeof v2 !== 'number') {
@@ -150,7 +167,7 @@ addNumComparisonOp('>', function(v1, v2) { return v1 > v2; });
 addNumComparisonOp('<=', function(v1, v2) { return v1 <= v2; });
 addNumComparisonOp('>=', function(v1, v2) { return v1 >= v2; });
 
-addBuiltin('cons', function(expr, env) {
+addSpecialForm('cons', function(expr, env) {
   var element = evalScheem(expr[1], env);
   var list = evalScheem(expr[2], env);
   if(!(list instanceof Array)) {
@@ -159,7 +176,7 @@ addBuiltin('cons', function(expr, env) {
   return [ element ].concat(list);
 }, 2);
 
-addBuiltin('car', function(expr, env) {
+addSpecialForm('car', function(expr, env) {
   var list = evalScheem(expr[1], env);
   if(!(list instanceof Array)) {
     throw "The argument to car must be a list was " + JSON.stringify(list);
@@ -170,7 +187,7 @@ addBuiltin('car', function(expr, env) {
   return list[0];
 }, 1);
 
-addBuiltin('cdr', function(expr, env) {
+addSpecialForm('cdr', function(expr, env) {
   var list = evalScheem(expr[1], env);
   if(!(list instanceof Array)) {
     throw "The argument to cdr must be a list was " + JSON.stringify(list);
@@ -181,7 +198,7 @@ addBuiltin('cdr', function(expr, env) {
   return list.slice(1);
 }, 1);
 
-addBuiltin('if', function(expr, env) {
+addSpecialForm('if', function(expr, env) {
   var cond = evalScheem(expr[1], env);
   if(cond === '#t') return evalScheem(expr[2], env);
   if(cond !== '#f') {
@@ -190,13 +207,37 @@ addBuiltin('if', function(expr, env) {
   return evalScheem(expr[3], env);
 }, 3);
 
-scheemBuiltins['begin'] = function(expr, env) {
+addSpecialForm('begin', function(expr, env) {
   var result = 0;
   for(var i = 1; i < expr.length; i++) {
     result = evalScheem(expr[i], env);
   }
   return result;
-}
+});
+
+addSpecialForm('lambda', function(expr, env) {
+  var args = expr[1];
+  if(!Array.isArray(args)) {
+    throw "The first argument to lambda must be a list of arguments";
+  }
+  var body = expr[2];
+  var meta = { name: "function" };
+  var func = function() {
+    if(arguments.length !== args.length) {
+      throw "Wrong number of arguments to " + meta.name + " expected " + args.length + " and received " + arguments.length;
+    }
+    var functionEnv = env;
+    for(var i = 0; i < arguments.length; i++) {
+      functionEnv = { name: args[i],
+                     value: arguments[i],
+                     outer: functionEnv 
+                    }; 
+    }
+    return evalScheem(body, functionEnv);
+  };
+  func.meta = meta;
+  return func;
+}, 2);
 
 if(typeof module !== 'undefined') {
   module.exports.evalScheem = evalScheem;

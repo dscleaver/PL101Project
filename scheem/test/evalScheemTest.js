@@ -4,6 +4,7 @@ if(typeof module !== 'undefined') {
   var evalScheem = scheem.evalScheem;
   var lookup = scheem.lookup; 
 } 
+var globalEnv = null;
 var assert = chai.assert;
 
 suite('Eval Tests', function() {
@@ -76,6 +77,14 @@ suite('Eval Tests', function() {
       assert.throw(function() {
         evalScheem(['define', 'x', 1], { x: 2 });
       });
+    });
+    test('sets name on function when it is defined', function() {
+      assert.deepEqual(
+        'myname',
+        evalScheem(['begin', 
+                     ['define', 'myname', ['lambda', [], 2]],
+                     'myname']).meta.name
+      );
     });
   });
 
@@ -590,15 +599,77 @@ suite('Eval Tests', function() {
     });
   });
 
-/*  suite('functions', function() {
+  suite('functions', function() {
+    var functionEnv = { name: 'plus-one',
+                       value: function(x) { return x + 1; },
+                       outer: { name: 'make-list',
+                               value: function(x, y, z) { return [x, y, z]; }, 
+                               outer: { name: 'x',
+                                       value: 3,
+                                       outer: globalEnv
+                                      }
+                              }
+                      };
     test('of one argument in the environment can be executed', function() {
-      var env = { name: 'plus-one',
-                  value: function(x) { return x + 1; }
-                  outer: null };
       assert.deepEqual(
-        evalScheem(['plus-one', 4], env),
+        evalScheem(['plus-one', 4], functionEnv),
         5
       );
     });
-  });*/
+    test('are passed evaluated arguments', function() {
+       assert.deepEqual(
+        evalScheem(['plus-one', ['+', 1, 2]], functionEnv),
+        4
+       );
+    });
+    test('are passed multiple arguments', function() {
+      assert.deepEqual(
+        evalScheem(['make-list', 1, ['+', 1, 2], 4], functionEnv),
+        [1, 3, 4]
+      );
+    });
+    test('arguments are evaluated in the current environment', function() {
+      assert.deepEqual(
+        evalScheem(['plus-one', 'x'], functionEnv),
+        4
+      );
+    });
+  });
+
+  suite('lambda', function() {
+    test('creates a function', function() {
+      assert.isFunction(evalScheem(['lambda', ['x'], ['+', 'x', 1]]));
+    });
+    test('created function evals body with args bound', function() {
+      assert.deepEqual(
+        evalScheem(['lambda', ['x'], 'x'], globalEnv)(2),
+        2
+      );
+    });
+    test('binds all arguments', function() {
+      assert.deepEqual(
+        evalScheem(['lambda', ['x', 'y'], ['+', 'x', 'y']])(1, 2),
+        3
+      );
+    });
+    test('enforces proper # of arguments are used', function() {
+      assert.throws(function() {
+        evalScheem(['lambda', ['x'], 'x'])(3,4);
+      });
+      assert.throws(function() {
+        evalScheem(['lambda', ['x'], 'x'])();
+      });
+    });
+    test('can be invoked within eval', function() {
+      assert.deepEqual(
+        evalScheem([['lambda', ['x'], 'x'], 3]),
+        3
+      );
+    });
+    test('fails if first argument is not a list', function() {
+      assert.throws(function() {
+        evalScheem(['lambda', 'x', 'x']);
+      });
+    });
+  });
 });
