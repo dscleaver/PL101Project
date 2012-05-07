@@ -3,7 +3,6 @@ if(typeof module !== 'undefined') {
   var scheem = require('../scheem');
   var evalScheem = scheem.evalScheem;
   var lookup = scheem.lookup; 
-  var globalEnv = scheem.globalEnv;
 } 
 var assert = chai.assert;
 
@@ -154,6 +153,11 @@ suite('Eval Tests', function() {
     test('fails if the variable is not already defined', function() {
       assert.throw(function() {
         evalScheem(['set!', 'y', 5], { bindings: { x: 7 }, outer: null });
+      });
+    });
+    test('fails if the variable is in the system space', function() {
+      assert.throw(function() {
+        evalScheem(['set!', '+', 3]);
       });
     });
   });
@@ -552,10 +556,10 @@ suite('Eval Tests', function() {
       );
     });
     test('evaluates only the conditional and the chosen expressions', function() {
-      var env = { bindings: {}, outer: globalEnv };
+      var env = { bindings: {}, outer: null };
       evalScheem(['if', ['=', 1, 1], ['define', 'x', 2], ['define', 'y', 3]], env);
       assert.isNull(lookup(env, 'y'));
-      env = { bindings: {}, outer: globalEnv };
+      env = { bindings: {}, outer: null };
       evalScheem(['if', ['=', 1, 2], ['define', 'x', 2], ['define', 'y', 3]], env);
       assert.isNull(lookup(env, 'x'));
     });
@@ -600,7 +604,7 @@ suite('Eval Tests', function() {
                           'make-list': function(x, y, z) { return [x, y, z]; }, 
                           x: 3
                         },
-                        outer: globalEnv
+                        outer: null
                       };
     test('of one argument in the environment can be executed', function() {
       assert.deepEqual(
