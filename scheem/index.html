@@ -9,49 +9,11 @@
 <body>
 <h2>Scheem</h2>
 <p>Welcome to my Scheem implementation. Simply type your Scheem program into
-the textarea at the bottom of the page and press run. The output will be displayed
-in the lower area.</p>
-<h3>Scheem Programs</h3>
-<p>Scheem is a language in the LISP family. All valid programs consist of
-exactly one expression. An expression can be a single atom (numbers or symbols consisting of characters and numbers) or a white space separated list of expressions surrounded by parenthesis. The textarea comes preloaded with a simple example.</p>
-<h3>Scheem Evaluation</h3>
-<p>Scheem follows the following simple rules for evaluation:</p>
-<dl>
-  <dt>Numbers</dt>
-  <dd>Evaluate to themselves</dd>
-  <dt>Symbols</dt>
-  <dd>Are resolved to a value within the current environment. The define and set! forms that can associate these values are defined below.</dd>
-  <dt>Lists</dt>
-  <dd>The first item in the list defines the operation that the list represents and the rest form the arguments to the operation.</dd>
-</dl>
-<h3>Supported Operations</h3>
-<dl>
-  <dt>Arithmetic (&lt;op&gt; arg1 arg2)</dt>
-  <dd>Scheem currently supports +, -, *, and divide on numbers.</dd>
-  <dt>Comparison (&lt;op&gt; arg1 arg2)</dt>
-  <dd>Use = to compare for equality between any values. Use &lt;, &gt;, &lt;=, and &gt;= as well to compare numbers.</dt>
-  <dt>(define var value)</dt>
-  <dd>Creates a variable in the current environment.</dd>
-  <dt>(set! var value)</dt>
-  <dd>Changes the value of an existing variable in the current environment.</dd>
-  <dt>(quote arg)</dt>
-  <dd>Quote always returns its argument unevaluated. Use quote to generate data for your Scheem program to consume. As is common in the LISP family of languages "'" can be used in place of quote. For example: '(1 2) is equivalent to (quote (1 2)).
-  <dt>(cons elem list)</dt>
-  <dd>Adds an element to the front of a list.</dd>
-  <dt>(car list)</dt>
-  <dd>Returns the first element in a list.</dd>
-  <dt>(cdr list)</dt>
-  <dd>Returns the list that does not contain the head in a list.</dd>
-  <dt>(if cond? then else)</dt>
-  <dd>Execute then if the condition is true and else if it is not.</dd>
-  <dt>(begin exprs...)</dt>
-  <dd>Execute all expressions in order and return the result of the last one.</dd>
-</dl> 
-<h3>Web Tests</h3>
-<p>If you are interested, you can check out the <a href="test/">online webtests</a></p>
-
+the textarea and press run. The output will be displayed
+in the lower area. If you aren't familiar with Scheem check out the <a href="doc.html">documentation</a>.</p>
 <h3>Live Test</h3>
-<textarea id="input" style="width:800px; height:300px;">
+Examples: <a href="" onclick="$('#input').val('(begin\n    (define factorial (lambda (x) (if (= x 1) 1 (* x (factorial (- x 1))))))\n    (factorial 5))'); return false;">Factorial</a> <a onclick="$('#input').val('(begin\n;; convert from church numerals to decimal\n    (define plusone (lambda (x) (+ x 1)))\n    (define as-decimal (lambda (n) (n plusone 0)))\n;; a few predefined numbers\n    (define zero (lambda (f x) x))\n    (define one (lambda (f x) (f x)))\n    (define two (lambda (f x) (f (f x))))\n    (define three (lambda (f x) (f (f (f x)))))\n;;+ 1\n    (define succ (lambda (n) (lambda (f x)  (f (n f x)))))\n;; m + n\n    (define plus (lambda (m n) (lambda (f x) (m f (n f x)))))\n;; m * n\n    (define mult (lambda (m n) (lambda (f x) (n (lambda (a) (m f a)) x))))\n;; - 1\n    (define pred (lambda (n)\n                            (lambda (f x)\n                                ((n (lambda (g) (lambda (h) (h (g f)))) (lambda (u) x)) (lambda (u) u)))))\n;; m - n\n    (define sub (lambda (m n) (n pred m)))\n;; should be 7\n    (as-decimal (sub (mult three (plus two one)) two))\n)'); return false;" href="">Church Numerals</a><br>
+<textarea id="input" style="width:800px; height:400px;">
 (+ 1 2)</textarea>
 
 <input id="submitbutton" type="button" value="Run" />
@@ -70,10 +32,10 @@ exactly one expression. An expression can be a single atom (numbers or symbols c
     $('#submitbutton').click(function() {
         var user_text = $('#input').val();
         $('#console').html(''); // clear console
-        log_console('Your input was: "' + user_text + '"');
+       // log_console('Your input was: "' + user_text + '"');
         try {
             var parsed = parseScheem(user_text);
-            log_console('Parsed: ' + JSON.stringify(parsed));
+        //    log_console('Parsed: ' + JSON.stringify(parsed));
             try {
                 var result = evalScheem(parsed);
                 log_console('Result: ' + prettyPrint(result));
