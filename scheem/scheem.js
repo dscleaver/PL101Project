@@ -151,11 +151,20 @@ addSpecialForm('begin', function(expr, env) {
   return result;
 });
 
+var checkAllString = function(args) {
+  for(var i = 0; i < args.length; i++) {
+    if(typeof args[i] !== 'string') {
+      throw "Arguments to functions must be symbols";
+    }
+  }
+};
+
 addSpecialForm('lambda', function(expr, env) {
   var args = expr[1];
   if(!Array.isArray(args)) {
     throw "The first argument to lambda must be a list of arguments";
   }
+  checkAllString(args);
   var body = expr[2];
   var meta = { name: "function",
                displayString: function() {

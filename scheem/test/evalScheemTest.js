@@ -667,5 +667,10 @@ suite('Eval Tests', function() {
         evalScheem(['lambda', 'x', 'x']);
       });
     });
+    test('fails if first argument is not a list of symbols', function() {
+      assert.throws(function() {
+        evalScheem(['lambda', [3], 'x']);
+      });
+    });
   });
 });
