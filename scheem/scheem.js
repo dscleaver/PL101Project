@@ -204,6 +204,9 @@ var define = function(name, func, argLength) {
   globalEnv.bindings[name] = wrapped;
 }
 
+globalEnv.bindings['#t'] = '#t';
+globalEnv.bindings['#f'] = '#f';
+
 var addNumberOp = function(name, op) {
   define(name, function(v1, v2) {
     if(typeof v1 !== 'number' || typeof v2 !== 'number') {

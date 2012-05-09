@@ -673,4 +673,19 @@ suite('Eval Tests', function() {
       });
     });
   });
+  
+  suite('boolean', function() {
+    test('#t evaluates to itself', function() {
+      assert.deepEqual(
+        evalScheem('#t'),
+        '#t'
+      );
+    });
+    test('#f evaluates to itself', function() {
+      assert.deepEqual(
+        evalScheem('#f'),
+        '#f'
+      );
+    });
+  });
 });
