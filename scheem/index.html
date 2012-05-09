@@ -23,7 +23,7 @@
 <h2>Scheem</h2>
 <p>Welcome to my Scheem implementation. Simply type your Scheem program into
 the textarea and press run. The output will be displayed
-in the lower area. If you aren't familiar with Scheem check out the <a href="doc.html">documentation</a>.</p>
+to the right of the run button. If you aren't familiar with Scheem check out the <a href="doc.html">documentation</a>, or click an example to load it into the editor.</p>
 <h3>Live Test</h3>
 Examples: <a href="" onclick="input.setValue('(begin\n    (define factorial (lambda (x) (if (= x 1) 1 (* x (factorial (- x 1))))))\n    (factorial 5))'); return false;">Factorial</a> <a onclick="input.setValue('(begin\n;; convert from church numerals to decimal\n    (define plusone (lambda (x) (+ x 1)))\n    (define as-decimal (lambda (n) (n plusone 0)))\n;; a few predefined numbers\n    (define zero (lambda (f x) x))\n    (define one (lambda (f x) (f x)))\n    (define two (lambda (f x) (f (f x))))\n    (define three (lambda (f x) (f (f (f x)))))\n;;+ 1\n    (define succ (lambda (n) (lambda (f x)  (f (n f x)))))\n;; m + n\n    (define plus (lambda (m n) (lambda (f x) (m f (n f x)))))\n;; m * n\n    (define mult (lambda (m n) (lambda (f x) (n (lambda (a) (m f a)) x))))\n;; - 1\n    (define pred (lambda (n)\n                            (lambda (f x)\n                                ((n (lambda (g) (lambda (h) (h (g f)))) (lambda (u) x)) (lambda (u) u)))))\n;; m - n\n    (define sub (lambda (m n) (n pred m)))\n;; should be 7\n    (as-decimal (sub (mult three (plus two one)) two))\n)'); return false;" href="">Church Numerals</a><br>
 
