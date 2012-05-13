@@ -185,6 +185,31 @@ addSpecialForm('lambda', function(expr, env) {
   return func;
 }, 2);
 
+addSpecialForm('cond', function(expr, env) {
+  for(var i = 1; i < expr.length; i++) {
+    if(!Array.isArray(expr[i]) || expr[i].length != 2) {
+      throw "Expected list (<conditional> <expression>) found " + prettyPrint(expr);
+    }
+    var conditional = evalScheem(expr[i][0], env);
+    if(conditional === '#t') {
+      return evalScheem(expr[i][1], env);
+    }
+    if(conditional !== '#f') {
+      throw "Expected #t or #f for <conditional> found " + prettyPrint(conditional);
+    }
+  }
+  return '#f';
+});
+
+addSpecialForm('let', function(expr, env) {
+  var variables = expr[1];
+  var letEnv = { bindings: {}, outer: env };
+  for(var i = 0; i < variables.length; i++) {
+    letEnv.bindings[variables[i][0]] = evalScheem(variables[i][1]);
+  }
+  return evalScheem(expr[2], letEnv);
+}, 2);
+
 var argLengthWrapper = function(name, func, argLength) {
   return function() {
     if(arguments.length !== argLength) {

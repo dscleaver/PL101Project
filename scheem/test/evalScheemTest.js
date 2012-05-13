@@ -688,4 +688,60 @@ suite('Eval Tests', function() {
       );
     });
   });
+  
+  suite('cond', function() {
+    test('returns #f if no arguments', function() {
+      assert.deepEqual(
+        evalScheem(['cond']),
+        '#f'
+      );
+    });
+    test('returns the result of executing the first true condition\'s consequence', function() {
+      assert.deepEqual(
+        evalScheem(['cond', [['=', 1, 1], ['+', 1, 2]], [['=', 2, 2], ['+', 2, 2]]]),
+        3
+      );
+      assert.deepEqual(
+        evalScheem(['cond', [['=', 1, 2], ['+', 1, 2]], [['=', 2, 2], ['+', 2, 2]]]),
+        4
+      );
+    });
+    test('stops testing once condition is true', function() {
+      var env = { bindings: { x: 0 }, outer: null };
+      evalScheem(['cond', ['#t', 1], [['begin', ['set!', 'x', 3], '#t'], 4]], env);
+      assert.deepEqual(env.bindings.x, 0);
+    });
+    test('only executes first true consequence', function() {
+      var env = { bindings: { x: 0 }, outer: null };
+      evalScheem(['cond', ['#t', ['set!', 'x', 2]], ['#t', ['set!', 'x', 4]]], env);
+      assert.deepEqual(env.bindings.x, 2);
+    });
+    test('fails if any argument it processes is not a list', function() {
+      assert.throws(function() {
+        evalScheem(['cond', ['#f', 3], 4]);
+      });
+    });
+    test('fails if any argument it processes is not a list of length 2', function() {
+      assert.throws(function() {
+        evalScheem(['cond', ['#f', 3], ['#t', 4, 5]]);
+      });
+      assert.throws(function() {
+        evalScheem(['cond', ['#f', 3], ['#t']]);
+      });
+    });
+    test('fails if the first element of an arg list it processes is not a conditional', function() {
+      assert.throws(function() {
+        evalScheem(['cond', [3, 4], ['#t', 5]]);
+      });
+    });
+  });
+
+  suite('let', function() {
+    test('binds variables and executes body', function() {
+      assert.deepEqual(
+        evalScheem(['let', [['x', 3], ['y', 4]], ['+', 'x', 'y']]),
+        7
+      );
+    });
+  });
 });
