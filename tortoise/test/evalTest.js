@@ -457,6 +457,18 @@ suite('Eval Tests', function() {
           3
         );
       });
+      test('Define a function then call it', function() {
+        assert.deepEqual(
+          evalString("define f(a, b) { a + b; } f(2, f(1, 3));", { bindings: {}, outer: null }),
+          6
+        );
+      });
+      test('Recursion', function() {
+        assert.deepEqual(
+          evalString("define fact(n) { var ans; ans := 1; if(n > 1) { ans := n * fact(n - 1); } ans; } fact(5);", { bindings: {}, outer: null }),
+          120
+        );
+      });
     });
   });
 });
