@@ -1,6 +1,6 @@
 TO DO:
 -----
-Tortoise implementation
+Turtle implementation
 
 Html page for tests
 
