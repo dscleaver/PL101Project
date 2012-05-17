@@ -1,7 +1,5 @@
 TO DO:
 -----
-Turtle implementation
-
 Html page for tests
 
 Html page to host tortoise implementation
