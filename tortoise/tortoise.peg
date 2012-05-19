@@ -8,7 +8,9 @@ statement =
 / "define " _ v:identifier _ "(" _ args:ident_list _ ")" _ "{" _ body:statements _ "}" _
     { return { tag: 'define', name: v, args: args, body: body }; }
 / "var " _ v:identifier _ ";" _
-    { return { tag: 'var', name: v }; }
+    { return { tag: 'var', name: v, initial: 0 }; }
+/ "var " _ v:identifier _ ":=" _ expr:expression _ ";"
+    { return { tag: 'var', name: v, initial: expr }; }
 / op:control_op _ "(" _ expr:expression _ ")" _ "{" _ body:statements _ "}" _
     { return { tag: op, expr: expr, body: body }; }
 / v:identifier _ ":=" _ expr:expression _ ";" _
