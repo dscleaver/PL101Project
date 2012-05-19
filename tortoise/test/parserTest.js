@@ -254,7 +254,13 @@ suite('Parser Tests', function() {
       test('declare a variable', function() {
         assert.deepEqual(
           parse("var xa_1 ; "),
-          [ { tag: 'var', name: 'xa_1' } ]
+          [ { tag: 'var', name: 'xa_1', initial: 0 } ]
+        );
+      });
+      test('declare a variable with default value', function() {
+        assert.deepEqual(
+          parse("var x1 := 1 + 2;"),
+          [ { tag: 'var', name: 'x1', initial: { tag: '+', left: 1, right: 2 } } ]
         );
       });
       test('variable must be a valid identifier', function() {
@@ -274,7 +280,7 @@ suite('Parser Tests', function() {
       test('with statements', function() {
         assert.deepEqual(
           parse("if ( 1 < 2 ) { var x; x := 3; }"),
-          [ { tag: 'if', expr: { tag: '<', left: 1, right: 2 }, body: [ { tag: 'var', name: 'x' }, { tag: ':=', left: 'x', right: 3 } ] } ]
+          [ { tag: 'if', expr: { tag: '<', left: 1, right: 2 }, body: [ { tag: 'var', name: 'x', initial: 0 }, { tag: ':=', left: 'x', right: 3 } ] } ]
         );
       });
       test('requires expression', function() {
@@ -294,7 +300,7 @@ suite('Parser Tests', function() {
       test('with statements', function() {
         assert.deepEqual(
           parse("repeat( 1 + 2 ) { var x; x := 3; }"),
-          [ { tag: 'repeat', expr: { tag: '+', left: 1, right: 2 }, body: [ { tag: 'var', name: 'x' }, { tag: ':=', left: 'x', right: 3 } ] } ]
+          [ { tag: 'repeat', expr: { tag: '+', left: 1, right: 2 }, body: [ { tag: 'var', name: 'x', initial: 0 }, { tag: ':=', left: 'x', right: 3 } ] } ]
         );
       });
       test('requires expression', function() {
