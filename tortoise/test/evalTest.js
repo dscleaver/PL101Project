@@ -324,6 +324,11 @@ suite('Eval Tests', function() {
           0
         );
       });
+      test('evaluates initial argument', function() {
+        var env = { bindings: {}, outer: null };
+        evalString("var x := 1 + 3;", env);
+        assert.deepEqual(env.bindings.x, 4);
+      }); 
       test('fails if variable already defined in environment', function() {
         assert.throws(function() {
           evalString("var x;", { bindings: { x: 0 }, outer: null });

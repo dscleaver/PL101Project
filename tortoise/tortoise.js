@@ -130,7 +130,7 @@ var evalStatement = function(statement, env) {
     case 'ignore':
       return evalExpr(statement.body, env);
     case 'var':
-      add_binding(env, statement.name, 0);
+      add_binding(env, statement.name, evalExpr(statement.initial, env));
       return 0;
     case ':=':
       return update(env, statement.left, evalExpr(statement.right, env));
