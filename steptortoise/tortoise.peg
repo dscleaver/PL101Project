@@ -1,0 +1,92 @@
+start = statements
+
+statements = statement*
+
+statement = 
+  "define " _ v:identifier _ "(" _ ")" _ "{" _ body:statements _ "}" _
+    { return { tag: 'define', name: v, args: [], body: body }; }
+/ "define " _ v:identifier _ "(" _ args:ident_list _ ")" _ "{" _ body:statements _ "}" _
+    { return { tag: 'define', name: v, args: args, body: body }; }
+/ "var " _ v:identifier _ ";" _
+    { return { tag: 'var', name: v, initial: 0 }; }
+/ "var " _ v:identifier _ ":=" _ expr:expression _ ";"
+    { return { tag: 'var', name: v, initial: expr }; }
+/ op:control_op _ "(" _ expr:expression _ ")" _ "{" _ body:statements _ "}" _
+    { return { tag: op, expr: expr, body: body }; }
+/ v:identifier _ ":=" _ expr:expression _ ";" _
+    { return { tag: ':=', left: v, right: expr }; }
+/ expr:expression _ ";" _ 
+    { return { tag: 'ignore', body: expr }; }
+
+control_op = "if" / "repeat"
+
+comma_ident = 
+  "," _ id:identifier
+    { return id }
+
+ident_list = 
+  first:identifier rest:comma_ident*
+    { return [first].concat(rest); }
+
+expression = 
+  comparative
+
+comp_op = "<=" / ">=" / "<" / ">" / "==" / "!=" 
+
+comparative =
+  left:additive _ op:comp_op _ right:comparative
+    { return {tag: op, left: left, right: right }; }
+/ additive
+
+add_op = "+" / "-"
+
+additive =
+  left:multiplicative _ op:add_op _ right:additive
+    { return {tag: op, left: left, right: right }; }
+/ multiplicative
+
+mult_op = "*" / "/"
+
+multiplicative =
+  left:primary _ op:mult_op _ right:multiplicative
+    { return {tag: op, left: left, right: right }; }
+/ primary
+
+primary = 
+  number
+/ v:identifier "(" _ ")"
+    { return {tag: 'call', name: v, args: [] }; }
+/ v:identifier "(" _ args:arg_list _ ")"
+    { return { tag: 'call', name: v, args: args }; }
+/ v:identifier
+    { return {tag: 'ident', name: v }; }
+/ "(" _ expr:expression _ ")"
+    { return expr; }
+
+comma_expression =
+  "," _ expr:expression
+    { return expr; }
+
+arg_list =
+  first:expression _ rest:comma_expression*
+    { return [ first ].concat(rest); }
+
+identifier = 
+  first:validfirstchar rest:validchar*
+    { return first + rest.join(''); }
+
+validfirstchar =
+  [a-zA-Z_]
+
+validchar = 
+  [0-9a-zA-Z_]
+
+number = 
+  neg:"-"? chars:[0-9]+ frac:num_frac?
+    { return parseFloat(neg + chars.join('') + frac); }
+
+num_frac = 
+  "." chars:[0-9]*
+    { return "." + chars.join(''); }
+
+_ = [ \t\n]*
