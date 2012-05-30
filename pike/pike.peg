@@ -1,0 +1,26 @@
+start =
+  processes
+
+processes = 
+  left:process "|" right:processes
+    { return { tag: '|', left: left, right: right }; }
+/ process
+
+process =
+  chan:id "!" val:id "." proc:process
+  { return { tag: '!', channel: chan, value: val, next: proc }; }
+/ chan:id o1:"?" o2:"*"? val:id "." proc:process
+  { return { tag: o1 + o2, channel: chan, value: val, next: proc }; }
+/ "new(" chan:id ")." proc:process
+  { return { tag: 'new', channel: chan, next: proc }; }
+/ "(" procs:processes ")"
+  { return procs; }
+/ "()"
+  { return { tag: 'nil' }; }
+
+validchar
+    = [0-9a-zA-Z_]//+-=@#$%^&/]
+
+id =
+    chars:validchar+
+        { return chars.join(""); }
