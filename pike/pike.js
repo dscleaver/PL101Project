@@ -34,7 +34,7 @@ Channel.prototype.receive = function(receiver) {
 
 Channel.prototype.toString = function() {
   return this.name;
-}
+};
 
 var evalExpr = function(expr, env, cont) {
   if(typeof expr === 'string') {
