@@ -33,11 +33,11 @@ Examples: <a href="" onclick="loadExample('./examples/boolean.pi'); return false
 new(x).out!x.()</textarea>
 <script>
   
-  var input = CodeMirror.fromTextArea(input, { theme: "neat", matchBrackets: true, lineNumbers: false });
+  var input_field = CodeMirror.fromTextArea(input, { theme: "neat", matchBrackets: true, lineNumbers: false });
 
   var loadExample = function(loc) {
     $.get(loc, function(data) {
-      input.setValue(data);
+      input_field.setValue(data);
     });
   };
   // Utility function to log messages
@@ -68,7 +68,7 @@ new(x).out!x.()</textarea>
   // After page load
   $(function() {
     $('#submitbutton').click(function() {
-        var user_text = input.getValue();
+        var user_text = input_field.getValue();
         $('#console').html(''); // clear console
        // log_console('Your input was: "' + user_text + '"');
         try {
