@@ -5,10 +5,12 @@ if(typeof module !== 'undefined') {
   var thunkValue = continuations.thunkValue;
 }
 
-var Channel = function() {
+var nameCounter = 1;
+var Channel = function(name) {
   this.pendingSends = [];
   this.pendingReceives = [];
   this.isChannel = true;
+  this.name = name + '_' + (nameCounter++);
 };
 
 Channel.prototype.send = function(value, next) {
@@ -29,6 +31,10 @@ Channel.prototype.receive = function(receiver) {
         return [ pendingSend[1], thunk(receiver, pendingSend[0]) ];
       }
     };
+
+Channel.prototype.toString = function() {
+  return this.name;
+}
 
 var evalExpr = function(expr, env, cont) {
   if(typeof expr === 'string') {
@@ -64,7 +70,7 @@ var evalProcess = function(expr, env) {
       }) ];
     case 'new':
       var newEnv = { bindings: { }, outer: env };
-      newEnv.bindings[expr.channel] = new Channel();
+      newEnv.bindings[expr.channel] = new Channel(expr.channel);
       return [ thunk(evalProcess, expr.next, newEnv) ];
     case '|':
       return [ thunk(evalProcess, expr.left, env), thunk(evalProcess, expr.right, env) ]; 
