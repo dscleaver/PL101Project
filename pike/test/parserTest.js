@@ -11,13 +11,13 @@ var assertAST = function(expr, expected) {
 suite('Parser Tests', function() {
   suite('Nil process', function() {
     test('returns empty list', function() {
-      assertAST('()', { tag: 'nil' });
+      assertAST(' () ', { tag: 'nil' });
     });
   });
   suite('Send', function() {
     test('simple send', function() {
       assertAST(
-        'x!y.()',
+        'x!y . ()',
         { tag: '!', channel: 'x', value: 'y', next: { tag: 'nil' } }
       );
     });
@@ -37,7 +37,7 @@ suite('Parser Tests', function() {
   suite('Receive', function() {
     test('simple receive', function() {
       assertAST(
-        'x?y.()',
+        'x?y . ()',
         { tag: '?', channel: 'x', value: 'y', next: { tag: 'nil' } }
       );
     });
@@ -57,13 +57,13 @@ suite('Parser Tests', function() {
   suite('Replicating Receive', function() {
     test('replicating receive', function() {
       assertAST(
-        'x?*y.()',
+        'x?*y . ()',
         { tag: '?*', channel: 'x', value: 'y', next: { tag: 'nil' } }
       );
     });
     test('channel name and variable value can be letters, numbers, and underscore', function() {
       assertAST(
-        'x1_f3?*y4gf.()',
+        'x1_f3?*y4gf.() ',
         { tag: '?*', channel: 'x1_f3', value: 'y4gf', next: { tag: 'nil' } }
       );
     });
@@ -77,7 +77,7 @@ suite('Parser Tests', function() {
   suite('New', function() {
     test('simple new', function() {
       assertAST(
-        'new(x).()',
+        'new( x ) . ()',
         { tag: 'new', channel: 'x', next: { tag: 'nil' } }
       );
     });
@@ -97,7 +97,7 @@ suite('Parser Tests', function() {
   suite('Parallel Processes', function() {
     test('separate parallel processes with a pipe', function() {
       assertAST(
-        'x!z.()|x?y.()',
+        'x!z.() | x?y.()',
         { tag: '|', left:{ tag: '!', channel: 'x', value: 'z', next: { tag: 'nil' } }, right:{ tag: '?', channel: 'x', value: 'y', next: { tag: 'nil' } } }
       );
     });

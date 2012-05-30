@@ -1,19 +1,20 @@
 start =
-  processes
+  _ procs:processes _
+    { return procs; }
 
 processes = 
-  left:process "|" right:processes
+  left:process _ "|" _ right:processes
     { return { tag: '|', left: left, right: right }; }
 / process
 
 process =
-  chan:id "!" val:id "." proc:process
+  chan:id "!" val:id _ "." _ proc:process
   { return { tag: '!', channel: chan, value: val, next: proc }; }
-/ chan:id o1:"?" o2:"*"? val:id "." proc:process
+/ chan:id  o1:"?" o2:"*"? val:id  _ "." _ proc:process
   { return { tag: o1 + o2, channel: chan, value: val, next: proc }; }
-/ "new(" chan:id ")." proc:process
+/ "new(" _ chan:id _ ")" _ "." _ proc:process
   { return { tag: 'new', channel: chan, next: proc }; }
-/ "(" procs:processes ")"
+/ "(" _ procs:processes _ ")"
   { return procs; }
 / "()"
   { return { tag: 'nil' }; }
@@ -24,3 +25,5 @@ validchar
 id =
     chars:validchar+
         { return chars.join(""); }
+
+_ = [ \t\n]*
