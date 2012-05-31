@@ -88,7 +88,7 @@ var evalProcess = function(expr, env) {
       return [ thunk(evalExpr, expr.channel, env, function(chan) {
         return chan.receive(function(val) {
           var newEnv = { bindings: { }, outer: env };
-          newEnv.bindings[expr.value] = val;
+          createBindings(expr.value, val, newEnv); 
           return [ thunk(evalProcess, expr.next, newEnv), thunk(evalProcess, expr, env) ]
         });
       }) ];
