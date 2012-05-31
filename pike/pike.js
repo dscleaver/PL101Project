@@ -40,7 +40,31 @@ var evalExpr = function(expr, env, cont) {
   if(typeof expr === 'string') {
     return [ thunk(cont, lookup(env, expr)) ];
   }
-  throw "Unknown expression";
+  if(expr.length === 0) {
+    return [ thunk(cont, expr) ];
+  }
+  var i = 1; 
+  var val_list = [];
+  var evalTupleArgs = function(val) {
+    val_list.push(val);
+    if(i === expr.length) {
+      return [ thunk(cont, val_list) ];
+    }
+    return [ thunk(evalExpr, expr[i++], env, evalTupleArgs) ];
+  };
+  return [ thunk(evalExpr, expr[0], env, evalTupleArgs) ]; 
+};
+
+var createBindings = function(pattern, value, env) {
+  if(typeof pattern === 'string') {
+    env.bindings[pattern] = value;
+  } else if(pattern instanceof Array && value instanceof Array && pattern.length === value.length) {
+    for(var i = 0; i < pattern.length; i++) {
+      createBindings(pattern[i], value[i], env);
+    } 
+  } else {
+    throw "Unmatched pattern: could not match " + pattern + " to " + value;
+  } 
 };
 
 var evalProcess = function(expr, env) {
@@ -56,7 +80,7 @@ var evalProcess = function(expr, env) {
       return [ thunk(evalExpr, expr.channel, env, function(chan) {
         return chan.receive(function(val) {
           var newEnv = { bindings: { }, outer: env };
-          newEnv.bindings[expr.value] = val;
+          createBindings(expr.value, val, newEnv);
           return [ thunk(evalProcess, expr.next, newEnv) ];
         });
       }) ];

@@ -27,6 +27,18 @@ suite('Parser Tests', function() {
         { tag: '!', channel: 'x1_f3', value: 'y4gf', next: { tag: 'nil' } }
       );
     });
+    test('send can send empty tuple', function() {
+      assertAST(
+        'x![].()',
+        { tag: '!', channel: 'x', value: [], next: { tag: 'nil' } }
+      );
+    });
+    test('send can send a full tuple', function() {
+      assertAST(
+        'x![a b []].()',
+        { tag: '!', channel: 'x', value: ['a', 'b', []], next: { tag: 'nil' } }
+      );
+    });
     test('chained sends', function() {
       assertAST(
         'x!y.y!z.z!w.()',
@@ -53,6 +65,18 @@ suite('Parser Tests', function() {
         { tag: '?', channel: 'x', value: 'y', next: { tag: '?', channel: 'y', value: 'z', next: { tag: '?', channel: 'z', value: 'w', next: { tag: 'nil' } } } }
       );
     });
+    test('receive can receive empty tuple', function() {
+      assertAST(
+        'x?[].()',
+        { tag: '?', channel: 'x', value: [], next: { tag: 'nil' } }
+      );
+    });
+    test('receive can receive a full tuple', function() {
+      assertAST(
+        'x?[a b []].()',
+        { tag: '?', channel: 'x', value: ['a', 'b', []], next: { tag: 'nil' } }
+      );
+    });
   });
   suite('Replicating Receive', function() {
     test('replicating receive', function() {
@@ -71,6 +95,18 @@ suite('Parser Tests', function() {
       assertAST(
         'x?*y.y?z.z?*w.()',
         { tag: '?*', channel: 'x', value: 'y', next: { tag: '?', channel: 'y', value: 'z', next: { tag: '?*', channel: 'z', value: 'w', next: { tag: 'nil' } } } }
+      );
+    });
+    test('can receive empty tuple', function() {
+      assertAST(
+        'x?*[].()',
+        { tag: '?*', channel: 'x', value: [], next: { tag: 'nil' } }
+      );
+    });
+    test('can receive a full tuple', function() {
+      assertAST(
+        'x?*[a b []].()',
+        { tag: '?*', channel: 'x', value: ['a', 'b', []], next: { tag: 'nil' } }
       );
     });
   });
