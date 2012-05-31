@@ -1,11 +1,10 @@
 new(true).
 new(false).
-(new(sig).
-  (true?*b.b?t.b?f.t!sig.() |
-   false?*b.b?t.b?f.f!sig.()) |
+((true?*[b].b?[t f].t![].() |
+   false?*[b].b?[t f].f![].()) |
  new(b).
  new(is_true).
  new(is_false).
-   (true!b.() | b!is_true.b!is_false.() |
-    is_true?s.out!is_true.() |
-    is_false?s.out!is_false.()))
+   (true![b].() | b![is_true is_false].() |
+    is_true?[].out![is_true].() |
+    is_false?[].out![is_false].()))
