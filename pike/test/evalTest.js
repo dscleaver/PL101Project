@@ -24,10 +24,13 @@ var makeInjector = function() {
   return {
         nextValue: 0,
         receive: function(receiver) {
-          return this.respondWith( receiver, this.nextValue++ );
+          return this.respondWith( receiver, this.value(this.nextValue++) );
         },
         respondWith: function(receiver, value) {
           return [ thunk(receiver, value) ];
+        },
+        value: function(i) {
+          return i;
         }
       };
 };
@@ -62,6 +65,18 @@ suite('Eval Tests', function() {
       evalString("x!y.x!y.()", env);
       assert.deepEqual(sensor.values, [ 2 ]);
     });
+    test('can send empty tuple', function() {
+      evalString("x![].()", env);
+      assert.deepEqual(sensor.values, [ [] ]);
+    });
+    test('can send one value tuple', function() {
+      evalString("x![y].()", env);
+      assert.deepEqual(sensor.values, [ [ 2 ] ]);
+    });
+    test('can send multiple value tuple', function() {
+      evalString("x![y [] y].()", env);
+      assert.deepEqual(sensor.values, [ [ 2, [], 2 ] ]);
+    });
   });
   suite('Receive', function() {
     test('Receive calls receive on channel with function to accept value', function() {
@@ -77,6 +92,48 @@ suite('Eval Tests', function() {
       evalString("z?y.x!y.()", env);
       assert.deepEqual(2, env.bindings.y);
       assert.deepEqual(sensor.values, [ 0 ]);
+    });
+    test('empty tuple matches empty tuple', function() {
+      injector.value = function(i) {
+        return [];
+      };
+      evalString("z?[].x!y.()", env);
+      assert.deepEqual(sensor.values, [ 2 ]);
+    });
+    test('empty tuple does not match other values', function() {
+      assert.throws(function() {
+        evalString("z?[].x!y.()", env);
+      });
+      assert.throws(function() {
+        injector.value = function(i) {
+          return [ i ];
+        };
+        evalString("z?[].x!y.()", env);
+      }); 
+    });
+    test('tuple pattern binds variables in pattern', function() {
+      injector.value = function(i) {
+        return [i, i + 1];
+      };
+      evalString("z?[a b].x![b a].()", env);
+      assert.deepEqual(sensor.values, [ [1, 0] ]);
+    });
+    test('tuple pattern will not match other values', function() {
+      assert.throws(function() {
+        evalString("z?[a b].x![b a].()", env);
+      });
+      assert.throws(function() {
+        injector.value = function(i) {
+          return [ i, i + 1 ];
+        };
+        evalString("z?[a].x!a.()", env);
+      });
+      assert.throws(function() {
+        injector.value = function(i) {
+          return [ i ];
+        };
+        evalString("z?[a b].x!a.()", env);
+      });
     });
     test('evaluation only proceeds when channel allows', function() {
       injector.respondWith = function() { return []; };

@@ -8,9 +8,9 @@ processes =
 / process
 
 process =
-  chan:id "!" val:id _ "." _ proc:process
+  chan:id "!" val:val _ "." _ proc:process
   { return { tag: '!', channel: chan, value: val, next: proc }; }
-/ chan:id  o1:"?" o2:"*"? val:id  _ "." _ proc:process
+/ chan:id  o1:"?" o2:"*"? val:pat  _ "." _ proc:process
   { return { tag: o1 + o2, channel: chan, value: val, next: proc }; }
 / "new(" _ chan:id _ ")" _ "." _ proc:process
   { return { tag: 'new', channel: chan, next: proc }; }
@@ -19,6 +19,34 @@ process =
 / "()"
   { return { tag: 'nil' }; }
 
+val = 
+  id:id
+  { return id; }
+/ "[]"
+  { return []; } 
+/ "[" _ vals:val_list _ "]"
+  { return vals; }
+
+space_val = ws+ val:val
+  { return val; }
+
+val_list = first:val rest:space_val*
+  { return [ first ].concat(rest); }
+
+pat =
+  id:id
+  { return id; }
+/ "[]"
+  { return []; }
+/ "[" _ pats:pat_list _ "]"
+  { return pats; }
+
+space_pat = ws+ pat:pat
+  {return pat; }
+
+pat_list = first:pat rest:space_pat*
+  { return [ first ].concat(rest); }
+
 validchar
     = [0-9a-zA-Z_]//+-=@#$%^&/]
 
@@ -26,4 +54,6 @@ id =
     chars:validchar+
         { return chars.join(""); }
 
-_ = [ \t\n]*
+_ = ws*
+
+ws = [ \t\n]
