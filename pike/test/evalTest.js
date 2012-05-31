@@ -142,16 +142,61 @@ suite('Eval Tests', function() {
     });
   });
   suite('Replicated Receive', function() {
-    test('replicates itself after receive', function () {
+    setup(function() {
+      var i = 0;
       injector.respondWith = function(receiver, value) {
-        if(value < 3) {
+        if(i++ < 3) {
           return [ thunk(receiver, value) ];
         } else {
           return [];
         }
       };
+    });
+    test('replicates itself after receive', function () {
       evalString("z?*y.x!y.()", env);
       assert.deepEqual(sensor.values, [0, 1, 2]);
+    });
+    test('empty tuple matches empty tuple', function() {
+      injector.value = function(i) {
+        return [];
+      };
+      evalString("z?*[].x!y.()", env);
+      assert.deepEqual(sensor.values, [ 2, 2, 2 ]);
+    });
+    test('empty tuple does not match other values', function() {
+      assert.throws(function() {
+        evalString("z?*[].x!y.()", env);
+      });
+      assert.throws(function() {
+        injector.value = function(i) {
+          return [ i ];
+        };
+        evalString("z?*[].x!y.()", env);
+      }); 
+    });
+    test('tuple pattern binds variables in pattern', function() {
+      injector.value = function(i) {
+        return [i, i + 1];
+      };
+      evalString("z?*[a b].x![b a].()", env);
+      assert.deepEqual(sensor.values, [ [1, 0], [2, 1], [3, 2] ]);
+    });
+    test('tuple pattern will not match other values', function() {
+      assert.throws(function() {
+        evalString("z?*[a b].x![b a].()", env);
+      });
+      assert.throws(function() {
+        injector.value = function(i) {
+          return [ i, i + 1 ];
+        };
+        evalString("z?*[a].x!a.()", env);
+      });
+      assert.throws(function() {
+        injector.value = function(i) {
+          return [ i ];
+        };
+        evalString("z?*[a b].x!a.()", env);
+      });
     });
   });
   suite('Parallel', function() {
