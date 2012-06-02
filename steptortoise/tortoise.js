@@ -198,12 +198,15 @@ var step = function(state) {
   }
 };
 
-var eval = function(expr, env, startState) {
-  var state = startState || stepStart(expr, env);
+var evalState = function(state) {
   while(!state.done) {
     step(state);
   }
   return state.data;
+};
+
+var eval = function(expr, env, startState) {
+  return evalState(stepStart(expr, env));
 };
 
 var evalString = function(expr, env) {
