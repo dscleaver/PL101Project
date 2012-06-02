@@ -1,0 +1,54 @@
+<html>
+<head><title>Tortoise Documentation</title></head>
+<body>
+<h2>Tortoise</h2>
+<p>Tortoise is an imperative language designed for drawing graphics by controling a turtle (the cursor) on a screen. The turtle always begins in the center of the canvas with the pen down.</p>
+<h3>Tortoise Evaluation</h3>
+<p>Tortoise programs consist of a series of statements containing expressions. The result of a series of statements is the result of the last statement executed.</p>
+<h3>Statements</h3>
+<dl>
+  <dt>Variable Declaration <i>var &lt;identifier&gt;;</i> or <i>var &lt;identifier&gt; := &lt;expression&gt;;</i></dt>
+  <dd>Declare a variable in the current environment. The first form declares a variable with the default value of 0. The second assigns the result of the expression to the variable. Throws an error if the variable has already been defined within the environment.</dd>
+  <dt>Variable Assignment <i>&lt;identifier&gt; := &lt;expression&gt;;</i></dt>
+  <dd>Assigns a value to a previously declared variable. Throws an error if the variable has not been defined.</dt>
+  <dt>Function Definition <i>define &lt;identifier&gt;() { &lt;statements&gt; }</i> or <i>define &lt; identifier&gt;(&lt;comma separated list of identifier&gt;) { &lt;statements&gt; }</i></dt>
+  <dd>Defines a function in the current environment if the name does not already exist.</dd>
+  <dt>Conditional Execution <i>if (&lt;expression&gt;) { &lt;statements&gt; }</i></dt>
+  <dd>Executes the statements if the expression returns a true value.</dd>
+  <dt>Repeated Execution <i>repeat (&lt;expression&gt;) { &lt;statements&gt; }</i></dt>
+  <dd>Repeats the statements n times where n is the result of evaluating the expression.</dd>
+  <dt>Expression Statements <i>&lt;expression&gt;;</i></a></dt>
+  <dd>Evaluates the expression and returns it's value.</dd>
+</dl> 
+<h3>Expressions</h3>
+<dl>
+  <dt>Numbers</dt>
+  <dd>Numbers evaluate to themselves.</dd>
+  <dt>Arithmetic Operations <i>&lt;expression&gt; &lt;op&gt; &lt;expression&gt;</i></dt>
+  <dd>Tortoise supports +, -, *, and /.</dd>
+  <dt>Comparison Operations <i>&lt;expression&gt; &lt;op&gt; &lt;expression&gt;</i></dt>
+  <dd>Tortoise supports &lt;, &gt;, &lt;=, &gt;=, ==, and !=</dd>
+  <dt>Variables <i>&lt;identifier&gt;</i></dt>
+  <dd>Accesses the value assigned to a variable within the current environment.</dd>
+  <dt>Function calls <i>&lt;identifier&gt;()</i> or <i>&lt;identifier&gt;(&lt;comma separated list of expression&gt;)</i></dt>
+  <dd>Looks up the function within the current environment and calls it with the results of the arguments</dd>
+</dl>
+<h3>Built-in Functions</h3>
+<dl>
+  <dt>forward(n)</dt>
+  <dd>Moves the turtle forward n pixels</dd>
+  <dt>left(angle)</dt>
+  <dd>Rotates the turtle angle degrees to the left</dd>
+  <dt>right(angle)</dt>
+  <dd>Rotates the turtle angle degrees to the right</dd>
+  <dt>penup()</dt>
+  <dd>Lifts the pen so the turtle won't draw.</dd>
+  <dt>pendown()</dt>
+  <dd>Lowers the pen so the turtle will draw.</dd>
+</dl>
+</dl>
+<h3>Web Tests</h3>
+<p>If you are interested, you can check out the <a href="test/">online webtests</a></p>
+
+</body>
+</html>
