@@ -28,6 +28,15 @@ Turtle.prototype.updateTurtle = function() {
     y: this.y - 32,
     transform: "r" + (-this.angle)});
   this.turtleimg.toFront();
+  this.updated = true;
+};
+
+Turtle.prototype.hasUpdated = function() {
+  return this.updated;
+};
+
+Turtle.prototype.resetUpdated = function() {
+  this.updated = false;
 };
 
 Turtle.prototype.drawTo = function(x, y) {

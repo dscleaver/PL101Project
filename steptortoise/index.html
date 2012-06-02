@@ -86,7 +86,10 @@ forward(10);</textarea>
               setupInitialState();
             }
             try {
-                step(state);
+                turtle.resetUpdated();
+                while(!state.done || turtle.hasUpdated()) {
+                  step(state);
+                }
                 if(state.done)
                   state = null;
             }
