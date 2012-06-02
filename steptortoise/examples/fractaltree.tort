@@ -1,0 +1,23 @@
+define curve(size, angle, scale, count) {
+ if (count > 0) {
+  forward(size);
+  left(angle);
+  curve(size * scale, angle, scale, count - 1);
+ 
+  right(90);
+  curve(size * scale * scale, angle, scale, count - 1);
+  left(90);
+ 
+  right(angle);
+  right(180);
+  forward(size);
+  left(180);
+ 
+ }
+}
+ 
+right(180);
+forward(100);
+right(180);
+curve(100, 29, 0.80, 10);
+
