@@ -42,6 +42,7 @@ forward(10);</textarea>
   var loadExample = function(loc) {
     $.get(loc, function(data) {
       input.setValue(data);
+      state = null;
     });
   };
   // Utility function to log messages
