@@ -75,6 +75,7 @@ forward(10);</textarea>
             try {
                 var result = evalState(state);
                 //log_console('Result: ' + result);
+                state = null;
             }
             catch(e) {
                 log_console('Eval Error: ' + e);
@@ -86,6 +87,8 @@ forward(10);</textarea>
             }
             try {
                 step(state);
+                if(state.done)
+                  state = null;
             }
             catch(e) {
                 log_console('Eval Error: ' + e);
