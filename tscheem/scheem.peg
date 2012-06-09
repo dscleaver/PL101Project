@@ -26,8 +26,32 @@ spaceexpression =
   whitespace+ expr:expression
       {return expr; }
 
+typename = 
+    chars:[a-zA-Z]+
+      { return chars.join(""); }
+
+typevalue = 
+  t:("num" / "bool" / "sym")
+    { return { tag: 'basetype', name: t }; }
+/ ":" abs:typename
+    { return { tag: 'abstype', name: abs }; }
+/ "list<" type:type ">"
+    { return { tag: 'listtype', type: type }; }
+
+type = 
+  left:typevalue _ "->" _ right:type
+    { return { tag: 'arrowtype', left: left, right: right }; }
+/ typevalue
+ 
+typeexpr = 
+  "[" expr:expression _ type:type _ "]"
+    { return { tag: 'typeexpr'
+               expr: expr,
+               type: type }; }
+
 expression =
-  atom
+  typeexpr
+  / atom
   / "'" expr:expression
     { return [ "quote", expr ]; }
   / "(" ")"

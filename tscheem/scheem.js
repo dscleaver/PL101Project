@@ -2,6 +2,305 @@ if(typeof module !== 'undefined') {
   var parseScheem = require('./parser').parseScheem;
 }
 
+var sameType = function (a, b) {
+    if(a.tag !== b.tag) {
+        return false;
+    }
+    switch(a.tag) {
+        case 'basetype': 
+            return a.name === b.name;
+        case 'arrowtype':
+            return sameType(a.left, b.left) && sameType(a.right, b.right);
+        case 'abstype':
+            return a.name === b.name;
+    }
+};
+
+var typeExprIf = function (expr, context) {
+    var COND_type = typeExpr(expr[1], context);
+    var A_type = typeExpr(expr[2], context);
+    var B_type = typeExpr(expr[3], context);
+    if(COND_type.name !== 'bool') {
+        throw "Not a bool type";
+    }
+    if(!sameType(A_type, B_type)) {
+        throw "Not same type";
+    }
+    return A_type;
+};
+
+var typeExprLambda = function(expr, context) {
+    var args = expr[1];
+    var body = expr[2];
+    var newContext = { bindings: {}, outer: context };
+    var arrowptr = { tag: 'arrowtype' };
+    var last = arrowptr;
+    for (var i = args.length - 1; i >= 0; i--) {
+      var arg = null;
+      var arg_type = null;
+      if(typeof args[i] === 'string') {
+        arg = args[i];
+        arg_type = { tag: 'typevar' };
+      } else {
+        arg = args[i].expr;
+        arg_type = args[i].type;
+      }
+      newContext.bindings[arg] = arg_type;
+      arrowptr.left = arg_type;
+      arrowptr = { tag: 'arrowtype', right: arrowptr }
+    }
+    var arrow = arrowptr.right;
+    if(typeof arrow === 'undefined') {
+      arrow = { tag: 'arrowtype', left: 'unittype' };
+      last = arrow;
+    }
+    addDefines(getDefineExprsInContext(body), newContext);
+    last.right = typeExpr(body, newContext);
+    return arrow;
+};
+
+var isAbstract = function(type) {
+  switch(type.tag) {
+    case 'basetype': return false;
+    case 'unittype': return false;
+    case 'listtype': return isAbstract(type.type);
+    case 'arrowtype': return isAbstract(type.left) || isAbstract(type.right);
+    case 'abstype': return true;
+  }
+};
+
+var bindType = function(from, to, bindings) {
+  if(to.tag === 'abstype') {
+    var bound = bindings[to.name];
+    if(typeof bound === 'undefined') {
+      bindings[to.name] = from;
+      return true;
+    }
+    return sameType(bindings[to.name], from);
+  }
+  if(from.tag !== to.tag) {
+    return false;
+  }
+  switch(from.tag) {
+    case 'basetype': return true;
+    case 'unittype': return true;
+    case 'listtype': return bindType(from.type, to.type, bindings);
+    case 'arrowtype': return bindType(from.left, to.left, bindings) && bindType(from.right, to.right, bindings);
+  }
+}; 
+
+var typeExprBegin = function(expr, context) {
+  var outType = { tag: 'unittype' };
+  for(var i = 1; i < expr.length; i++) {
+    outType = typeExpr(expr[i], context);
+  }
+  return outType;
+};
+
+var typeApplication = function(expr, context) {
+    // Application (A B C)
+    var A = expr[0];
+    var A_type = typeExpr(A, context);
+    if(expr.length === 1) {
+      if(A_type.tag !== 'arrowtype') {
+        throw "Not an arrow type";
+      }
+      if(A_type.left.tag !== 'unittype') {
+        throw "Function requires " + A_type.left.tag;
+      }
+      return A_type.right;
+    }
+    var bindings = {};
+    for(var i = 1; i < expr.length; i++) {
+      if (A_type.tag !== 'arrowtype') {
+        throw "Not an arrow type";
+      }
+      var B = expr[i];
+      var B_type = typeExpr(B, context);
+    // Check that A type is arrow type
+      var U_type = A_type.left;
+      if(isAbstract(U_type)) {
+        if(bindType(B_type, U_type, bindings) === false) {
+          throw "Can not match argument type";
+        }
+      } else {
+    // Verify argument type matches
+        if (sameType(U_type, B_type) === false) {
+          throw "Argument type did not match";
+        }
+      }
+      A_type = A_type.right;
+    }
+    return A_type;
+};
+
+var typeExprQuote = function(expr) {
+  if(expr === '#t' || expr === '#f') {
+    return { tag: 'basetype', name: 'bool' };
+  }
+  if(expr === 'string') {
+    return { tag: 'basetype', name: 'sym' };
+  }
+  if(expr === 'number') {
+    return { tag: 'basetype', name: 'num' };
+  }
+  if(!Array.isInstance(expr)) {
+    throw "Can not quote type expressions";
+  }
+  var type = typeExprQuote(expr[0]);
+  for(var i = 1; i < expr.length; i++) {
+    if(sameType(type, typeExprQuote(expr[i])) === false) {
+      throw "Lists must all contain the same type.";
+    }
+  }
+  return { tag: 'listtype', type: type };
+};
+  
+var formatType = function(type) {
+  return "type";
+}
+
+var getDefineExprsInContext = function(expr) {
+  if(typeof expr === 'number') {
+    return [];
+  }
+  if(typeof expr === 'string') {
+    return [];
+  }
+  if(!Array.isArray(expr)) {
+    return getDefineExprsInContext(expr.expr);
+  }
+  if(expr[0] === 'lambda') {
+    return [];
+  }
+  if(expr[0] === 'define') {
+    return [ expr ];
+  }  
+  var defines = [];
+  for(var i = 0; i < expr.length; i++) {
+    defines = defines.concat(getDefineExprsInContext(expr[i]));
+  }
+  return defines;
+};
+
+var addDefine = function(define, context) {
+  var name = define[1];
+  var typeHint = null;
+  if(name.tag === 'typeexpr') {
+    name = name.expr;
+    typeHint = name.type;
+  }
+  if(typeof name !== 'string') {
+    throw "The first argument to define must be a variable but was " + JSON.stringify(expr[1]);
+  }
+  if(lookup(env, name) !== null) {
+    throw expr[1] + " is already defined.";
+  }
+  context.bindings[name] = { tag: 'unprocessed', processing: false, name: name, expr: define[2], typeHint: typeHint}
+};
+ 
+var processDefine = function(unprocessed, context) {
+  if(unprocessed.processing) {
+    throw "Circular definitions without type hints are not allowed";
+  }
+  unprocessed.processing = true;
+  var exprType = typeExpr(unprocessed.expr, context);
+  if(typeHint !== null && sameType(exprType, unprocessed.typeHint) === false) {
+    throw "Definition of " + unprocessed.name + " with type " + formatType(unprocessed.typeHint) + " doew not match " + formatType(unprocessed.typeHint);
+  }
+  update(context, unprocessed.name, exprType);
+  return exprType; 
+}; 
+    
+var addDefines = function(defines, context) {
+  for(var i = 0; i < defines.length; i++) {
+    addDefine(defines[i], context);
+  }
+};
+
+var typeExpr = function (expr, context) {
+    if(!context) {
+      context = { bindings: {}, outer: null };
+      addDefines(getDefineExprsInContext(expr), context);
+    }
+    if (typeof expr === 'number') {
+        return { tag: 'basetype', name: 'num' };
+    }
+    if (expr === '#t' || expr === '#f') {
+      return { tag: 'basetype', name: 'bool' };
+    }
+    if (typeof expr === 'string') {
+        var type = lookup(context, expr);
+        if(type === null) {
+          throw "Type error: no type for " + expr;
+        }
+        if(type.tag === 'unprocessed') {
+          if(type.typeHint !== null) {
+            type = type.typeHint;
+          } else {
+            type = processDefine(type, context);
+          }
+        }
+        return type;
+    }
+    if(!Array.isArray(expr)) {
+      var actualType = typeExpr(expr.expr, context);
+      if(!sameType(actualType, expr.type)) {
+        throw "Type error: " + formatType(actualType) + " does not match " + formatType(expr.type);
+      }
+      return expr.type;
+    }    
+    if (expr[0] === 'if') {
+        return typeExprIf(expr, context);
+    }
+    if(expr[0] === 'lambda') {
+      return typeExprLambda(expr, context);
+    }
+    if(expr[0] === 'begin') {
+      return typeExprBegin(expr, context);
+    }
+    if(expr[0] === 'quote') {
+      return typeExprQuote(expr[1]);
+    }
+    if(expr[0] === 'set!') {
+      var type = lookup(expr[1], context);
+      var valueType = typeExpr(expr[2], context);
+      if(sameType(type, valueType) === false) {
+        throw "Can not set " + expr[1] + " of type " + formatType(type) + " to " + formatType(valueType);
+      }
+      return { tag: 'unittype' };
+    }
+    if(expr[0] === 'define') {
+      var name = expr[1];
+      if(name.tag === 'typeexpr') {
+        name = name.expr;
+      }
+      var type = lookup(name, context);
+      if(type.tag === 'unprocessed') {
+        processDefine(type, context);
+      }
+      return { tag: 'unittype' };
+    }
+    return typeApplication(expr, context);
+};
+
+var eraseTypes = function(expr) {
+  if(typeof expr === 'number') {
+    return expr;
+  }
+  if(typeof expr === 'string') {
+    return expr;
+  }
+  if(expr.tag === 'typeexpr') {
+    return eraseTypes(expr.expr);
+  }
+  var newExpr = [];
+  for(var i = 0; i < expr.length; i++) {
+    newExpr.push(eraseTypes(expr[i]));
+  }
+  return newExpr;
+};  
+
 var prettyPrint = function(value) {
   if(typeof value === 'string') {
     return value;
@@ -213,31 +512,6 @@ addSpecialForm('lambda', function(expr, env) {
   return next(0, env, initialMeta);
 }, 2);
 
-addSpecialForm('cond', function(expr, env) {
-  for(var i = 1; i < expr.length; i++) {
-    if(!Array.isArray(expr[i]) || expr[i].length != 2) {
-      throw "Expected list (<conditional> <expression>) found " + prettyPrint(expr);
-    }
-    var conditional = evalScheem(expr[i][0], env);
-    if(conditional === '#t') {
-      return evalScheem(expr[i][1], env);
-    }
-    if(conditional !== '#f') {
-      throw "Expected #t or #f for <conditional> found " + prettyPrint(conditional);
-    }
-  }
-  return '#f';
-});
-
-addSpecialForm('let', function(expr, env) {
-  var variables = expr[1];
-  var letEnv = { bindings: {}, outer: env };
-  for(var i = 0; i < variables.length; i++) {
-    letEnv.bindings[variables[i][0]] = evalScheem(variables[i][1]);
-  }
-  return evalScheem(expr[2], letEnv);
-}, 2);
-
 var argLengthWrapper = function(name, func, argLength) {
   return function() {
     if(arguments.length !== argLength) {
@@ -379,4 +653,5 @@ if(typeof module !== 'undefined') {
   module.exports.evalScheemString = evalScheemString;
   module.exports.lookup = lookup;
   module.exports.globalEnv = null;
+  module.exports.typeExpr = typeExpr;
 }
