@@ -46,6 +46,8 @@ Examples: <a href="" onclick="input.setValue('(begin\n    (define factorial (lam
             var parsed = parseScheem(user_text);
         //    log_console('Parsed: ' + JSON.stringify(parsed));
             try {
+                typeExpr(parsed);
+                parsed = eraseTypes(parsed); 
                 var result = evalScheem(parsed);
                 log_console('Result: ' + prettyPrint(result));
             }
