@@ -1,5 +1,7 @@
 if(typeof module !== 'undefined') {
-  var parseScheem = require('./parser').parseScheem;
+  var parser = require('./parser');
+  var parseScheem = parser.parseScheem;
+  var type = parser.type;
 }
 
 var sameType = function (a, b) {
@@ -304,6 +306,8 @@ var eraseTypes = function(expr) {
   }
   return newExpr;
 };  
+
+console.log(type(":a->:a->:a"));
 
 var prettyPrint = function(value) {
   if(typeof value === 'string') {
