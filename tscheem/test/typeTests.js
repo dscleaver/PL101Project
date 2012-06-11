@@ -180,7 +180,7 @@ suite('Type System Tests', function() {
     });
     test('cons can append to empty list', function() {
       assert.deepEqual(
-        typeExpr(['cons', 1, ['quote', [1]]]),
+        typeExpr(['cons', 1, ['quote', []]]),
         list(base('num'))
       );
     });
