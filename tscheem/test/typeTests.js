@@ -2,7 +2,10 @@ if(typeof module !== 'undefined') {
   var chai = require('chai');
   var scheem = require('../scheem');
   var typeExpr = scheem.typeExpr;
+  var eraseTypes = scheem.eraseTypes;
+  var evalScheem = scheem.evalScheem;
   var lookup = scheem.lookup; 
+  var parseScheem = require('../parser').parseScheem;
 } 
 var assert = chai.assert;
 
@@ -180,6 +183,19 @@ suite('Type System Tests', function() {
         typeExpr(['cons', 1, ['quote', [1]]]),
         list(base('num'))
       );
+    });
+  });
+  suite('Typing integration', function() {
+    test('Factorial', function() {
+      var expr = parseScheem("(begin (define {factorial Num->Num} (lambda ({x Num}) (if (= x 1) 1 (* x (factorial (- x 1)))))) (factorial 5))");
+      assert.deepEqual(
+        typeExpr(expr),
+        base('num')
+      );
+      assert.deepEqual(
+        evalScheem(eraseTypes(expr)),
+        120
+      ); 
     });
   });
 });
