@@ -94,12 +94,19 @@ var bindType = function(from, to, bindings) {
   switch(from.tag) {
     case 'basetype': return true;
     case 'unittype': return true;
-    case 'listtype': return bindType(from.type, to.type, bindings);
+    case 'listtype': 
+      if(!from.type || !to.type) {
+        return true;
+      }
+      return bindType(from.type, to.type, bindings);
     case 'arrowtype': return bindType(from.left, to.left, bindings) && bindType(from.right, to.right, bindings);
   }
 }; 
 
 var replaceBindings = function(to, bindings) {
+  if(!to) {
+    return to;
+  }
   switch(to.tag) {
     case 'abstype':
       var bound = bindings[to.name];
