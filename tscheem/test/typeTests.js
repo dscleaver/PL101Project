@@ -139,6 +139,14 @@ suite('Type System Tests', function() {
       );
     });*/
   });
+  suite('Quote', function() {
+    test('Quote of num list is listtype num', function() {
+      assert.deepEqual(
+        typeExpr(["quote", [1]]),
+        list(base('num'))
+      );
+    });
+  });
   suite('Typed Expression', function() {
     test('type checks if the expression matches the provided type', function() {
       assert.deepEqual(
@@ -155,8 +163,22 @@ suite('Type System Tests', function() {
   suite('Function Application', function() {
     test('Binds type variables when applying functions', function() {
       assert.deepEqual(
-        typeExpr(['equal', 1, 2], { bindings: { equal: arrow(abs('a'), arrow(abs('a'), base('bool'))) }, outer: null }),
-        base('bool')
+        typeExpr(['compare', 1, 2], { bindings: { compare: arrow(abs('a'), arrow(abs('a'), abs('a'))) }, outer: null }),
+        base('num')
+      );
+    });
+  });
+  suite('Built-in types', function() {
+    test('+ has proper type', function() {
+      assert.deepEqual(
+        typeExpr(['+', 1, 2]),
+        base('num')
+      );
+    });
+    test('cons can append to empty list', function() {
+      assert.deepEqual(
+        typeExpr(['cons', 1, ['quote', [1]]]),
+        list(base('num'))
       );
     });
   });

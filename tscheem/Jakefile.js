@@ -9,9 +9,9 @@ task('build', [], function() {
   fs.readFile(input_file, function(err, data) {
     if(err) throw err;
     fs.writeFile(output_file,
-      'var parseScheem = '
+      'var parser = '
       + PEG.buildParser(String(data), {}).toSource()
-      + '.parse;\nif (typeof module !== "undefined") { module.exports.parseScheem = parseScheem; }',
+      + ';\nvar parseScheem = parser.parse;\nif (typeof module !== "undefined") { module.exports.parseScheem = parseScheem;\nmodule.exports.parser = parser; }',
       function(err) {
         if(err) throw err;
         complete();

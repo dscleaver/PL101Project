@@ -3,6 +3,7 @@ if(typeof module !== 'undefined') {
   var scheem = require('../scheem');
   var evalScheem = scheem.evalScheem;
   var lookup = scheem.lookup; 
+  var emptyEnv = scheem.emptyEnv;
 } 
 var assert = chai.assert;
 
@@ -556,10 +557,10 @@ suite('Eval Tests', function() {
       );
     });
     test('evaluates only the conditional and the chosen expressions', function() {
-      var env = { bindings: {}, outer: null };
+      var env = emptyEnv();
       evalScheem(['if', ['=', 1, 1], ['define', 'x', 2], ['define', 'y', 3]], env);
       assert.isNull(lookup(env, 'y'));
-      env = { bindings: {}, outer: null };
+      env = emptyEnv();
       evalScheem(['if', ['=', 1, 2], ['define', 'x', 2], ['define', 'y', 3]], env);
       assert.isNull(lookup(env, 'x'));
     });
@@ -604,7 +605,7 @@ suite('Eval Tests', function() {
                           'make-list': function(x) { return function(y) { return function(z) { return [x, y, z]; }; }; }, 
                           x: 3
                         },
-                        outer: null
+                        outer: emptyEnv()
                       };
     test('of one argument in the environment can be executed', function() {
       assert.deepEqual(

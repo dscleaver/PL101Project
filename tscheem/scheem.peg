@@ -9,6 +9,8 @@ whitespace =
   [ \t]
   / "\n" comment?
 
+_ = whitespace*
+
 validchar
     = [0-9a-zA-Z_?!+-=@#$%^&*/.]
 
@@ -27,16 +29,18 @@ spaceexpression =
       {return expr; }
 
 typename = 
-    chars:[a-zA-Z]+
-      { return chars.join(""); }
+    first:[a-z] chars:[a-zA-Z]*
+      { return first + chars.join(""); }
 
 typevalue = 
-  t:("num" / "bool" / "sym")
-    { return { tag: 'basetype', name: t }; }
-/ ":" abs:typename
+  t:("Num" / "Bool" / "Sym")
+    { return { tag: 'basetype', name: t.toLowerCase() }; }
+/ abs:typename
     { return { tag: 'abstype', name: abs }; }
-/ "list<" type:type ">"
+/ "[" type:type "]"
     { return { tag: 'listtype', type: type }; }
+/ "(" _ type:type _ ")"
+    { return type; }
 
 type = 
   left:typevalue _ "->" _ right:type
@@ -44,8 +48,8 @@ type =
 / typevalue
  
 typeexpr = 
-  "[" expr:expression _ type:type _ "]"
-    { return { tag: 'typeexpr'
+  "{" _ expr:expression _ type:type _ "}"
+    { return { tag: 'typeexpr',
                expr: expr,
                type: type }; }
 

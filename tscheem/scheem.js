@@ -1,6 +1,12 @@
 if(typeof module !== 'undefined') {
-  var parseScheem = require('./parser').parseScheem;
+  var parse = require('./parser');
+  var parser = parse.parser;
+  var parseScheem = parse.parseScheem;
 }
+
+var type = function(str) {
+  return parser.parse(str, "type");
+} 
 
 var sameType = function (a, b) {
     if(a.tag !== b.tag) {
@@ -13,6 +19,11 @@ var sameType = function (a, b) {
             return sameType(a.left, b.left) && sameType(a.right, b.right);
         case 'abstype':
             return a.name === b.name;
+        case 'listtype':
+            if(a.type && b.type) {
+              return sameType(a.type, b.type);
+            }
+            return true;
     }
 };
 
@@ -89,6 +100,23 @@ var bindType = function(from, to, bindings) {
   }
 }; 
 
+var replaceBindings = function(to, bindings) {
+  switch(to.tag) {
+    case 'abstype':
+      var bound = bindings[to.name];
+      if(typeof bound === 'undefined') {
+        return to;
+      }
+      return bound;
+    case 'basetype': return to;
+    case 'unittype': return to;
+    case 'listtype': return { tag: 'listtype', type: replaceBindings(to.type, bindings) };
+    case 'arrowtype': return { tag: 'arrowtype', left: replaceBindings(to.left, bindings), right: replaceBindings(to.right, bindings) }
+
+  }
+};
+  
+
 var typeExprBegin = function(expr, context) {
   var outType = { tag: 'unittype' };
   for(var i = 1; i < expr.length; i++) {
@@ -131,29 +159,32 @@ var typeApplication = function(expr, context) {
       }
       A_type = A_type.right;
     }
-    return A_type;
+    return replaceBindings(A_type, bindings);
 };
 
 var typeExprQuote = function(expr) {
   if(expr === '#t' || expr === '#f') {
     return { tag: 'basetype', name: 'bool' };
   }
-  if(expr === 'string') {
+  if(typeof expr === 'string') {
     return { tag: 'basetype', name: 'sym' };
   }
-  if(expr === 'number') {
+  if(typeof expr === 'number') {
     return { tag: 'basetype', name: 'num' };
   }
-  if(!Array.isInstance(expr)) {
+  if(!Array.isArray(expr)) {
     throw "Can not quote type expressions";
   }
-  var type = typeExprQuote(expr[0]);
+  if(expr.length === 0) {
+    return { tag: 'listtype', type: false };
+  }
+  var listType = typeExprQuote(expr[0]);
   for(var i = 1; i < expr.length; i++) {
-    if(sameType(type, typeExprQuote(expr[i])) === false) {
+    if(sameType(listType, typeExprQuote(expr[i])) === false) {
       throw "Lists must all contain the same type.";
     }
   }
-  return { tag: 'listtype', type: type };
+  return { tag: 'listtype', type: listType };
 };
   
 var formatType = function(type) {
@@ -218,9 +249,13 @@ var addDefines = function(defines, context) {
   }
 };
 
+var makeEmptyTypeContext = function() {
+  return { bindings: {}, outer: globalTypeEnv };
+}
+
 var typeExpr = function (expr, context) {
     if(!context) {
-      context = { bindings: {}, outer: null };
+      context = makeEmptyTypeContext();
       addDefines(getDefineExprsInContext(expr), context);
     }
     if (typeof expr === 'number') {
@@ -318,19 +353,12 @@ var prettyPrint = function(value) {
   return "(" + values.join(" ") + ")";
 }; 
 
-var globalEnv = { bindings: {}, outer: null };
-
-var globalLookup = function(v) {
-  var val = globalEnv.bindings[v];
-  if(typeof val !== 'undefined') {
-    return val;
-  }
-  return null;
-};
+var globalTypeEnv = { bindings: {}, outer:null, isLocked: true };
+var globalEnv = { bindings: {}, outer: null, isLocked: true };
 
 var lookup = function (env, v) {
     if(env === null) {
-      return globalLookup(v);
+      return null;
     }
     var val = env.bindings[v];
     if(typeof val !== 'undefined') {
@@ -341,13 +369,13 @@ var lookup = function (env, v) {
 
 var update = function (env, v, val) {
     if(env === null) {
-      if(globalLookup(v) !== null) {
-        throw "Can not change built in value " + v;
-      }
       throw "Variable " + v + " is not defined";
     }
     var bound = env.bindings[v];
     if(typeof bound !== 'undefined') {
+      if(env.isLocked) {
+        throw "Can not change built in value " + v;
+      }
       env.bindings[v] = val;
     } else {
       update(env.outer, v, val);
@@ -360,8 +388,12 @@ var add_binding = function (env, v, val) {
 
 var scheemSpecialForms = {};
 
+var emptyEnv = function() {
+  return { bindings: {}, outer: globalEnv };
+}
+
 var evalScheem = function (expr, env) {
-    env = env || { bindings: {}, outer: null };
+    env = env || { bindings: {}, outer: emptyEnv() };
     // Numbers evaluate to themselves
     if (typeof expr === 'number') {
         return expr;
@@ -521,13 +553,14 @@ var argLengthWrapper = function(name, func, argLength) {
   };
 }
     
-var define = function(name, func, argLength) {
+var define = function(name, func, typeString) {
   var wrapped = func;
   wrapped.meta = { name: name,
                    displayString: function() {
                      return "[" + this.name + ": built in]";
                    }
                  };
+  globalTypeEnv.bindings[name] = type(typeString); 
   globalEnv.bindings[name] = wrapped;
 }
 
@@ -545,7 +578,7 @@ var addNumberOp = function(name, op) {
       }
       return op(v1, v2);
     };
-  }, 2);
+  }, "Num->Num->Num");
 };
 
 addNumberOp('+', function(v1, v2) { return v1 + v2; });
@@ -581,7 +614,7 @@ define('=', function(v1) {
     if(deepEqual(v1, v2)) return '#t';
     return '#f';
   };
-}, 2);
+}, "a->a->Bool");
 
 var addNumComparisonOp = function(name, op) {
   define(name, function(v1) {
@@ -595,7 +628,7 @@ var addNumComparisonOp = function(name, op) {
       if(op(v1, v2)) return '#t';
       return '#f';
     };
-  }, 2);
+  }, "Num->Num->Bool");
 };  
 
 addNumComparisonOp('<', function(v1, v2) { return v1 < v2; });
@@ -613,7 +646,7 @@ define('cons', function(element) {
     }
     return [ element ].concat(list);
   };
-}, 2);
+}, "a->[a]->[a]");
 
 define('car', function(list) {
   if(!(list instanceof Array)) {
@@ -623,7 +656,7 @@ define('car', function(list) {
     throw "Can not call car on an empty list";
   }
   return list[0];
-}, 1);
+}, "[a]->a");
 
 define('cdr', function(list) {
   if(!(list instanceof Array)) {
@@ -633,7 +666,7 @@ define('cdr', function(list) {
     throw "Can not call cdr on an empty list";
   }
   return list.slice(1);
-}, 1);
+}, "[a]->[a]");
 
 define('alert', function(v) {
     if(typeof v === 'undefined') {
@@ -646,7 +679,7 @@ define('alert', function(v) {
     window.alert(toShow);
   }
   return 0;
-}, 1);
+}, "a->num");
 
 if(typeof module !== 'undefined') {
   module.exports.evalScheem = evalScheem;
@@ -654,4 +687,5 @@ if(typeof module !== 'undefined') {
   module.exports.lookup = lookup;
   module.exports.globalEnv = null;
   module.exports.typeExpr = typeExpr;
+  module.exports.emptyEnv = emptyEnv;
 }
