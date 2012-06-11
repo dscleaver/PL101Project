@@ -50,8 +50,7 @@ var typeExprLambda = function(expr, context) {
       var arg = null;
       var arg_type = null;
       if(typeof args[i] === 'string') {
-        arg = args[i];
-        arg_type = { tag: 'typevar' };
+        throw "Lambda arguments must be typed";
       } else {
         arg = args[i].expr;
         arg_type = args[i].type;
@@ -218,13 +217,13 @@ var addDefine = function(define, context) {
   var name = define[1];
   var typeHint = null;
   if(name.tag === 'typeexpr') {
-    name = name.expr;
     typeHint = name.type;
+    name = name.expr;
   }
   if(typeof name !== 'string') {
     throw "The first argument to define must be a variable but was " + JSON.stringify(expr[1]);
   }
-  if(lookup(env, name) !== null) {
+  if(lookup(context, name) !== null) {
     throw expr[1] + " is already defined.";
   }
   context.bindings[name] = { tag: 'unprocessed', processing: false, name: name, expr: define[2], typeHint: typeHint}
@@ -236,7 +235,7 @@ var processDefine = function(unprocessed, context) {
   }
   unprocessed.processing = true;
   var exprType = typeExpr(unprocessed.expr, context);
-  if(typeHint !== null && sameType(exprType, unprocessed.typeHint) === false) {
+  if(unprocessed.typeHint !== null && sameType(exprType, unprocessed.typeHint) === false) {
     throw "Definition of " + unprocessed.name + " with type " + formatType(unprocessed.typeHint) + " doew not match " + formatType(unprocessed.typeHint);
   }
   update(context, unprocessed.name, exprType);
@@ -310,7 +309,7 @@ var typeExpr = function (expr, context) {
       if(name.tag === 'typeexpr') {
         name = name.expr;
       }
-      var type = lookup(name, context);
+      var type = lookup(context, name);
       if(type.tag === 'unprocessed') {
         processDefine(type, context);
       }
@@ -687,5 +686,6 @@ if(typeof module !== 'undefined') {
   module.exports.lookup = lookup;
   module.exports.globalEnv = null;
   module.exports.typeExpr = typeExpr;
+  module.exports.eraseTypes = eraseTypes;
   module.exports.emptyEnv = emptyEnv;
 }
