@@ -1,0 +1,48 @@
+<html>
+<head><title>Scheem Documentation</title></head>
+<body>
+<h2>Scheem</h2>
+<p>Scheem is a language in the LISP family. All valid programs consist of
+exactly one expression. An expression can be a single atom (numbers or symbols consisting of characters and numbers) or a white space separated list of expressions surrounded by parenthesis. The textarea comes preloaded with a simple example.</p>
+<h3>Scheem Evaluation</h3>
+<p>Scheem follows the following simple rules for evaluation:</p>
+<dl>
+  <dt>Numbers</dt>
+  <dd>Evaluate to themselves</dd>
+  <dt>Symbols</dt>
+  <dd>Are resolved to a value within the current environment. The define and set! forms that can associate these values are defined below.</dd>
+  <dt>Lists</dt>
+  <dd>The first item in the list defines the operation that the list represents and the rest form the arguments to the operation.</dd>
+</dl>
+<h3>Supported Operations</h3>
+<dl>
+  <dt>Arithmetic (&lt;op&gt; arg1 arg2)</dt>
+  <dd>Scheem currently supports +, -, *, and divide on numbers.</dd>
+  <dt>Comparison (&lt;op&gt; arg1 arg2)</dt>
+  <dd>Use = to compare for equality between any values. Use &lt;, &gt;, &lt;=, and &gt;= as well to compare numbers.</dt>
+  <dt>(&lt;func&gt; &lt;args...&gt;)</dt>
+  <dd>Evaluate the func argument then pass it the evaluated args to get a result.</dd>
+  <dt>(define var value)</dt>
+  <dd>Creates a variable in the current environment.</dd>
+  <dt>(set! var value)</dt>
+  <dd>Changes the value of an existing variable in the current environment.</dd>
+  <dt>(quote arg)</dt>
+  <dd>Quote always returns its argument unevaluated. Use quote to generate data for your Scheem program to consume. As is common in the LISP family of languages "'" can be used in place of quote. For example: '(1 2) is equivalent to (quote (1 2)).
+  <dt>(cons elem list)</dt>
+  <dd>Adds an element to the front of a list.</dd>
+  <dt>(car list)</dt>
+  <dd>Returns the first element in a list.</dd>
+  <dt>(cdr list)</dt>
+  <dd>Returns the list that does not contain the head in a list.</dd>
+  <dt>(if cond? then else)</dt>
+  <dd>Execute then if the condition is true and else if it is not.</dd>
+  <dt>(begin exprs...)</dt>
+  <dd>Execute all expressions in order and return the result of the last one.</dd>
+  <dt>(lambda (args...) body)</dt>
+  <dd>Create a function where args will be bound when the body is executed.</dd>
+</dl> 
+<h3>Web Tests</h3>
+<p>If you are interested, you can check out the <a href="test/">online webtests</a></p>
+
+</body>
+</html>
