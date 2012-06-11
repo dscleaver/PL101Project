@@ -218,9 +218,13 @@ var addDefines = function(defines, context) {
   }
 };
 
+var makeEmptyTypeContext = function() {
+  return { bindings: {}, outer: globalTypeEnv };
+}
+
 var typeExpr = function (expr, context) {
     if(!context) {
-      context = { bindings: {}, outer: null };
+      context = makeEmptyTypeContext();
       addDefines(getDefineExprsInContext(expr), context);
     }
     if (typeof expr === 'number') {
@@ -318,19 +322,12 @@ var prettyPrint = function(value) {
   return "(" + values.join(" ") + ")";
 }; 
 
-var globalEnv = { bindings: {}, outer: null };
-
-var globalLookup = function(v) {
-  var val = globalEnv.bindings[v];
-  if(typeof val !== 'undefined') {
-    return val;
-  }
-  return null;
-};
+var globalTypeEnv = { bindings: {}, outer:null, isLocked: true };
+var globalEnv = { bindings: {}, outer: null, isLocked: true };
 
 var lookup = function (env, v) {
     if(env === null) {
-      return globalLookup(v);
+      return null;
     }
     var val = env.bindings[v];
     if(typeof val !== 'undefined') {
@@ -341,13 +338,13 @@ var lookup = function (env, v) {
 
 var update = function (env, v, val) {
     if(env === null) {
-      if(globalLookup(v) !== null) {
-        throw "Can not change built in value " + v;
-      }
       throw "Variable " + v + " is not defined";
     }
     var bound = env.bindings[v];
     if(typeof bound !== 'undefined') {
+      if(env.isLocked) {
+        throw "Can not change built in value " + v;
+      }
       env.bindings[v] = val;
     } else {
       update(env.outer, v, val);
@@ -360,8 +357,12 @@ var add_binding = function (env, v, val) {
 
 var scheemSpecialForms = {};
 
+var emptyEnv = function() {
+  return { bindings: {}, outer: globalEnv };
+}
+
 var evalScheem = function (expr, env) {
-    env = env || { bindings: {}, outer: null };
+    env = env || { bindings: {}, outer: emptyEnv() };
     // Numbers evaluate to themselves
     if (typeof expr === 'number') {
         return expr;
@@ -654,4 +655,5 @@ if(typeof module !== 'undefined') {
   module.exports.lookup = lookup;
   module.exports.globalEnv = null;
   module.exports.typeExpr = typeExpr;
+  module.exports.emptyEnv = emptyEnv;
 }

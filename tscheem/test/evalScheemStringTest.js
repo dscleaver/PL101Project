@@ -2,6 +2,7 @@ if(typeof module !== 'undefined') {
   var chai = require('chai');
   var scheem = require('../scheem');
   var evalScheemString = scheem.evalScheemString;
+  var emptyEnv = scheem.emptyEnv;
 } 
 var assert = chai.assert;
 
@@ -24,7 +25,7 @@ suite('Eval String Tests', function() {
   });
   test('environment is passed to eval', function() {
     assert.deepEqual(
-      evalScheemString("(* x x)", { bindings: { x:4 }, outer: null }),
+      evalScheemString("(* x x)", { bindings: { x:4 }, outer: emptyEnv() }),
       16
     );
   });
