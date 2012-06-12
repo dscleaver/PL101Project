@@ -1,9 +1,9 @@
 if(typeof module !== 'undefined') {
   var chai = require('chai');
-  var pike = require('../pike');
+  var pile = require('../pile');
   var thunk = require('../continuations').thunk;
-  var eval = pike.eval;
-  var evalString = pike.evalString;
+  var eval = pile.eval;
+  var evalString = pile.evalString;
 } 
 var assert = chai.assert;
 

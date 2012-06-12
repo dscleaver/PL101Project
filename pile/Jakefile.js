@@ -1,6 +1,6 @@
 var PEG = require('pegjs')
   , fs = require('fs')
-  , input_file = 'pike.peg'
+  , input_file = 'pile.peg'
   , output_file = 'parser.js';
 
 task('default', ['build']);
