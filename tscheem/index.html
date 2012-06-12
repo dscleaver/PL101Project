@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="../lib/codemirror.css">
 <link rel="stylesheet" href="../lib/theme/neat.css">
 <script src="../lib/mode/scheme/scheme.js"></script>
-<script src="./parser.js"></script>
-<script src="./scheem.js"></script>
+<script src="../tscheem/parser.js"></script>
+<script src="../tscheem/scheem.js"></script>
 <style type="text/css">
 .CodeMirror-scroll {
   height: 350px;
@@ -17,21 +17,25 @@
 .CodeMirror {
   border: solid 1px;
 }
+ 
+.example {
+  display: none;
+}
 </style>
 </head>
 <body>
 <h2>TScheem</h2>
-<p>Welcome to my Scheem implementation. Simply type your Scheem program into
+<p>Welcome to my TScheem implementation. Simply type your TScheem program into
 the textarea and press run. The output will be displayed
-to the right of the run button. If you aren't familiar with Scheem check out the <a href="doc.html">documentation</a>, or click an example to load it into the editor.</p>
+to the right of the run button. If you aren't familiar with TScheem check out the <a href="doc.html">documentation</a>, or click an example to load it into the editor.</p>
 <h3>Live Test</h3>
-Examples: <a href="" onclick="input.setValue('(begin\n    (define factorial (lambda (x) (if (= x 1) 1 (* x (factorial (- x 1))))))\n    (factorial 5))'); return false;">Factorial</a> <a onclick="input.setValue('(begin\n;; convert from church numerals to decimal\n    (define plusone (lambda (x) (+ x 1)))\n    (define as-decimal (lambda (n) (n plusone 0)))\n;; a few predefined numbers\n    (define zero (lambda (f x) x))\n    (define one (lambda (f x) (f x)))\n    (define two (lambda (f x) (f (f x))))\n    (define three (lambda (f x) (f (f (f x)))))\n;;+ 1\n    (define succ (lambda (n) (lambda (f x)  (f (n f x)))))\n;; m + n\n    (define plus (lambda (m n) (lambda (f x) (m f (n f x)))))\n;; m * n\n    (define mult (lambda (m n) (lambda (f x) (n (lambda (a) (m f a)) x))))\n;; - 1\n    (define pred (lambda (n)\n                            (lambda (f x)\n                                ((n (lambda (g) (lambda (h) (h (g f)))) (lambda (u) x)) (lambda (u) u)))))\n;; m - n\n    (define sub (lambda (m n) (n pred m)))\n;; should be 7\n    (as-decimal (sub (mult three (plus two one)) two))\n)'); return false;" href="">Church Numerals</a><br>
+Examples: <a href="" onclick="input.setValue($('#factorial').text()); return false;">Factorial</a> <br>
 
 <input id="submitbutton" type="button" value="Run" /><div id="console" style="display: inline;"></div>
-<textarea id="input" style="width:800px; height:400px;">
+<textarea id="codeInput" style="width:800px; height:400px;">
 (+ 1 2)</textarea>
 <script>
-  var input = CodeMirror.fromTextArea(input, { theme: "neat", matchBrackets: true, lineNumbers: false });
+  var input = CodeMirror.fromTextArea(codeInput, { theme: "neat", matchBrackets: true, lineNumbers: false });
   // Utility function to log messages
   var log_console = function(msg) {
       $('#console').append(msg);
@@ -61,6 +65,8 @@ Examples: <a href="" onclick="input.setValue('(begin\n    (define factorial (lam
     });
   });
 </script>
-
+<pre id="factorial" class="example">(begin
+  (define {factorial Num-&gt;Num} (lambda ({x Num}) (if (= x 1) 1 (* x (factorial (- x 1))))))
+  (factorial 5))</pre>
 </body>
 </html>
