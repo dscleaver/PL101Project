@@ -514,7 +514,13 @@ var parse = (function(){
                                 }
                               }
                               if (result8 !== null) {
-                                result0 = [result0, result1, result2, result3, result4, result5, result6, result7, result8];
+                                result9 = parse__();
+                                if (result9 !== null) {
+                                  result0 = [result0, result1, result2, result3, result4, result5, result6, result7, result8, result9];
+                                } else {
+                                  result0 = null;
+                                  pos = pos1;
+                                }
                               } else {
                                 result0 = null;
                                 pos = pos1;
