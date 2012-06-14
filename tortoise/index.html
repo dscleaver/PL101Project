@@ -11,6 +11,7 @@
 <script src="./parser.js"></script>
 <script src="./tortoise.js"></script>
 <script src="./turtle.js"></script>
+<script src="./hare.js"></script>
 <style type="text/css">
 .CodeMirror-scroll {
   height: 350px;
@@ -28,7 +29,7 @@ the textarea and press run. If you aren't familiar with Tortoise check out the <
 <h3>Live Test</h3>
 Examples: <a href="" onclick="loadExample('./examples/fractaltree.tort'); return false;">Fractal Tree</a><br>
 
-<input id="submitbutton" type="button" value="Run" /><div id="console" style="display: inline;"></div>
+<input id="submitbutton" type="button" value="Run" /><input id="compile" type="button" value="Compile/Run" /><div id="console" style="display: inline;"></div>
 <textarea id="input" style="width:800px; height:400px;">
 forward(10);</textarea>
 <div id="turtlecanvas" style="width:700px; height:600px; background-color: #eee;"></div>
@@ -49,26 +50,46 @@ forward(10);</textarea>
   $(function() {
     var $elem = $( '#turtlecanvas');
     var turtle = new Turtle($elem.width()/2, $elem.height()/2, Raphael('turtlecanvas'));
-    $('#submitbutton').click(function() {
+    var makeListener = function(func) {
+      return function() {
         var user_text = input.getValue();
         $('#console').html(''); // clear console
        // log_console('Your input was: "' + user_text + '"');
         try {
             var parsed = parse(user_text);
+            turtle.clear();
         //    log_console('Parsed: ' + JSON.stringify(parsed));
+            func(parsed);
+        }
+        catch(e) {
+            log_console('Parse Error: ' + e);
+        }
+      };
+    };
+    $('#submitbutton').click(makeListener(function(parsed) {
             try {
-                turtle.clear();
-                var result = eval(parsed, newTurtleEnv(turtle));
+                var result = evalTortoise(parsed, newTurtleEnv(turtle));
                 log_console('Result: ' + result);
             }
             catch(e) {
                 log_console('Eval Error: ' + e);
             }
+    }));
+    $('#compile').click(makeListener(function(parsed) {
+      try {
+        var compiled = compileEnvironment(newTurtleEnv(turtle)) + compileStatements(parsed);
+
+        try {
+          var result = eval(compiled);
+          log_console('Result: ' + result);
         }
         catch(e) {
-            log_console('Parse Error: ' + e);
+          log_console('Eval Error: ' + e);
         }
-    });
+      } catch(e) {
+        log_console('Compile Error: ' + e);
+      }
+    }));
   });
 </script>
 
