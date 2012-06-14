@@ -151,13 +151,13 @@ var evalStatements = function(statements, env) {
   return val;
 };
 
-var eval = evalStatements;
+var evalTortoise = evalStatements;
 
 var evalString = function(expr, env) {
-  return eval(parse(expr), env);
+  return evalTortoise(parse(expr), env);
 }
 
 if(typeof module !== 'undefined') {
-  module.exports.eval = eval;
+  module.exports.evalTortoise = evalTortoise;
   module.exports.evalString = evalString;
 }
