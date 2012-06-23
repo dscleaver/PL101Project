@@ -19,6 +19,10 @@
 .CodeMirror {
   border: solid 1px;
 }
+
+.example {
+  display: none;
+}
 </style>
 </head>
 <body>
@@ -26,20 +30,16 @@
 <p>Welcome to the Pile live test page. Simply type your Pile program into
 the textarea and press run. If you aren't familiar with Pile check out the <a href="doc.html">documentation</a>, or click an example to load it into the editor.</p>
 <h3>Live Test</h3>
-Examples: <a href="" onclick="loadExample('../pile/examples/boolean.pi'); return false;">Encoding Booleans</a><br>
+Examples: <a href="" onclick="input.setValue($('#churchb').text()); return false;">Encoding Booleans</a><a href="" onclick="input.setValue($('#seive').text()); return false;">Seive of Eratosthenes</a><br>
 
 <input id="submitbutton" type="button" value="Run" /><div id="console" style="display: inline;"></div>
-<textarea id="input" style="width:800px; height:400px;">
-new(x).out!x.()</textarea>
+<textarea id="codeInput" style="width:800px; height:400px;">
+new x
+run out!x</textarea>
 <script>
-  
-  var input_field = CodeMirror.fromTextArea(input, { theme: "neat", matchBrackets: true, lineNumbers: false });
+ 
+  var input = CodeMirror.fromTextArea(codeInput, { theme: "neat", matchBrackets: true, lineNumbers: false });
 
-  var loadExample = function(loc) {
-    $.get(loc, function(data) {
-      input_field.setValue(data);
-    });
-  };
   // Utility function to log messages
   var log_console = function(msg) {
       $('#console').append(msg);
@@ -68,7 +68,7 @@ new(x).out!x.()</textarea>
   // After page load
   $(function() {
     $('#submitbutton').click(function() {
-        var user_text = input_field.getValue();
+        var user_text = input.getValue();
         $('#console').html(''); // clear console
        // log_console('Your input was: "' + user_text + '"');
         try {
@@ -88,6 +88,29 @@ new(x).out!x.()</textarea>
     });
   });
 </script>
+<pre id="churchb" class="example">def tt[b] = b?[t f] = t![]
+def ff[b] = b?[t f] = f![]
 
+run (
+ new b 
+ new is_true 
+ new is_false
+ (tt![b] | 
+  b![is_true is_false] |
+  is_true?[] = out![is_true] |
+  is_false?[] = out![is_false]))</pre>
+<pre id="seive" class="example">def primes[r] = 
+  (def nums[n out] = (new r1 ( +![n 1 r1] | r1?n1 = ( out!n1 | nums[n1 out] )))
+   def filter[n in out] = in?m = (new r1 run %![m n r1] new z run r1?remainder = /=![remainder 0 z] z?is_not_zero = if is_not_zero then out!m.filter![n in out] else filter![n in out])
+   new c 
+   run nums![1 c]
+   new loop
+   run loop!c
+   loop?*in
+     in?x = r!x.(new c1 (filter![x in c1] | loop!c1)))
+
+new values
+run primes![values]
+run (values?v = out!v | values?v = out!v | values?v = out!v)</pre>   
 </body>
 </html>
