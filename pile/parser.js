@@ -1161,6 +1161,24 @@ var parse = (function(){
         if (result0 === null) {
           pos = pos0;
         }
+        if (result0 === null) {
+          pos0 = pos;
+          if (input.charCodeAt(pos) === 48) {
+            result0 = "0";
+            pos++;
+          } else {
+            result0 = null;
+            if (reportFailures === 0) {
+              matchFailed("\"0\"");
+            }
+          }
+          if (result0 !== null) {
+            result0 = (function(offset) { return 0; })(pos0);
+          }
+          if (result0 === null) {
+            pos = pos0;
+          }
+        }
         return result0;
       }
       

@@ -77,6 +77,8 @@ val =
 numericLiteral =
   firstDigit:[1-9] remaining:[0-9]*
     { return parseInt(firstDigit + remaining.join('')); }
+/ "0"
+    { return 0; }
 
 space_val = ws+ val:val
   { return val; }
