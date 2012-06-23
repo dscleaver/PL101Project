@@ -296,6 +296,11 @@ suite('Eval Tests', function() {
         evalString("run +![]", env);
       });
     });
+    test('sends to regular channels', function() {
+      evalString("run (new t ( +![1 2 t] | t?r = x!r ))", env);
+      evalString("run (new t ( x!1.x!2.t?r = x!r | +![1 2 t] ))", env);
+      assert.deepEqual(sensor.values, [3, 1, 2, 3]);
+    });
   });
   suite('Minus', function() {
     test('works with proper inputs', function() {
