@@ -48,7 +48,11 @@ var evalExpr = function(expr, env, cont) {
     return [ thunk(cont, expr) ];
   }
   if(typeof expr === 'string') {
-    return [ thunk(cont, lookup(env, expr)) ];
+    var val = lookup(env, expr);
+    if(val === null) {
+      throw "No binding for variable " + expr;
+    }
+    return [ thunk(cont, val) ];
   }
   if(expr.length === 0) {
     return [ thunk(cont, expr) ];
