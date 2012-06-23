@@ -193,6 +193,7 @@ var createGlobalEnv = function() {
   bindNumericOp('-', function(x, y) { return x - y; });
   bindNumericOp('*', function(x, y) { return x * y; });
   bindNumericOp('/', function(x, y) { return x / y; });
+  bindNumericOp('%', function(x, y) { return x % y; });
   bindNumericOp('<', function(x, y) { return x < y; });
   bindNumericOp('>', function(x, y) { return x > y; });
   bindNumericOp('<=', function(x, y) { return x <= y; });
