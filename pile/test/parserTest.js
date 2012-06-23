@@ -98,6 +98,12 @@ suite('Parser Tests', function() {
         send('x', 103)
       );
     });
+    test('Zero', function() {
+      assertProcessAST(
+        'x!0',
+        send('x', 0)
+      );
+    });
   });
   suite('if then else', function() {
     test('parses', function() {
