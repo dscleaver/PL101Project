@@ -369,6 +369,30 @@ suite('Eval Tests', function() {
       });
     });
   });
+  suite('Modulo', function() {
+    test('works with proper inputs', function() {
+      evalString("run %![4 2 x]", env);
+      assert.deepEqual(sensor.values, [0]);
+    });
+    test('fails if first two arguments are not numbers', function() {
+      assert.throws(function() {
+        evalString("run %![1 true x]", env);
+      });
+    }); 
+    test('fails if the third argument is not a writeable channel', function() {
+      assert.throws(function() {
+        evalString("run %![1 2 z]", env);
+      });
+    });
+    test('fails if the value sent is not a tuple of length 3', function() {
+      assert.throws(function() {
+        evalString("run %!2", env);
+      });
+      assert.throws(function() {
+        evalString("run %![]", env);
+      });
+    });
+  });
   suite('less than', function() {
     test('works with proper inputs', function() {
       evalString("run <![2 4 x].<![4 2 x]", env);

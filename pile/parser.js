@@ -1397,13 +1397,13 @@ var parse = (function(){
       function parse_validchar() {
         var result0;
         
-        if (/^[0-9a-zA-Z_+\-*\/<>=]/.test(input.charAt(pos))) {
+        if (/^[0-9a-zA-Z_+\-*\/<>=%]/.test(input.charAt(pos))) {
           result0 = input.charAt(pos);
           pos++;
         } else {
           result0 = null;
           if (reportFailures === 0) {
-            matchFailed("[0-9a-zA-Z_+\\-*\\/<>=]");
+            matchFailed("[0-9a-zA-Z_+\\-*\\/<>=%]");
           }
         }
         return result0;
