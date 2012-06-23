@@ -18,7 +18,11 @@ Channel.prototype.send = function(value, next) {
         this.pendingSends.push([ value, next ]);
         return [];
       } else {
-        return [ thunk(this.pendingReceives.shift(), value), next ];
+        if(next !== null) {
+          return [ thunk(this.pendingReceives.shift(), value), next ];
+        } else {
+          return [ thunk(this.pendingReceives.shift(), value) ];
+        }
       }
     };
 
@@ -28,7 +32,7 @@ Channel.prototype.receive = function(receiver) {
         return [];
       } else {
         var pendingSend = this.pendingSends.shift();
-        if(pendingSend != null) {
+        if(pendingSend[1] !== null) {
           return [ pendingSend[1], thunk(receiver, pendingSend[0]) ];
         } else {
           return [ thunk(receiver, pendingSend[0]) ];
