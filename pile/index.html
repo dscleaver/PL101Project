@@ -35,7 +35,7 @@ Examples: <a href="" onclick="input.setValue($('#churchb').text()); return false
 <input id="submitbutton" type="button" value="Run" /><div id="console" style="display: inline;"></div>
 <textarea id="codeInput" style="width:800px; height:400px;">
 new x
-run out!x</textarea>
+run log!x</textarea>
 <script>
  
   var input = CodeMirror.fromTextArea(codeInput, { theme: "neat", matchBrackets: true, lineNumbers: false });
@@ -58,7 +58,7 @@ run out!x</textarea>
 
   var newEnv = function() {
     return {  bindings: {
-        out: new BuiltInChannel(function(value) {
+        log: new BuiltInChannel(function(value) {
           log_console(value + "<br>");
         })
       },
@@ -97,20 +97,28 @@ run (
  new is_false
  (tt![b] | 
   b![is_true is_false] |
-  is_true?[] = out![is_true] |
-  is_false?[] = out![is_false]))</pre>
+  is_true?[] = log![is_true] |
+  is_false?[] = log![is_false]))</pre>
 <pre id="seive" class="example">def primes[r] = 
-  (def nums[n out] = (new r1 ( +![n 1 r1] | r1?n1 = ( out!n1 | nums[n1 out] )))
-   def filter[n in out] = in?m = (new r1 run %![m n r1] new z run r1?remainder = /=![remainder 0 z] z?is_not_zero = if is_not_zero then out!m.filter![n in out] else filter![n in out])
-   new c 
+  (def nums[n out] = (new r1 
+     ( +![n 1 r1] | 
+       r1?n1 = ( out!n1 | 
+                 nums![n1 out] )))
+   def filter[n in out] = 
+     in?m = (new r1 
+       run %![m n r1] 
+       new z 
+       run r1?remainder = /=![remainder 0 z] 
+       z?is_not_zero = if is_not_zero then out!m . filter![n in out] else filter![n in out])
+   new c  
    run nums![1 c]
    new loop
    run loop!c
-   loop?*in
+   loop?*in = 
      in?x = r!x.(new c1 (filter![x in c1] | loop!c1)))
 
 new values
 run primes![values]
-run (values?v = out!v | values?v = out!v | values?v = out!v)</pre>   
+run (values?v = log!v | values?v = log!v | values?v = log!v)</pre>   
 </body>
 </html>
