@@ -28,7 +28,11 @@ Channel.prototype.receive = function(receiver) {
         return [];
       } else {
         var pendingSend = this.pendingSends.shift();
-        return [ pendingSend[1], thunk(receiver, pendingSend[0]) ];
+        if(pendingSend != null) {
+          return [ pendingSend[1], thunk(receiver, pendingSend[0]) ];
+        } else {
+          return [ thunk(receiver, pendingSend[0]) ];
+        }
       }
     };
 
@@ -37,6 +41,12 @@ Channel.prototype.toString = function() {
 };
 
 var evalExpr = function(expr, env, cont) {
+  if(typeof expr === 'boolean') {
+    return [ thunk(cont, expr) ];
+  }
+  if(typeof expr === 'number') {
+    return [ thunk(cont, expr) ];
+  }
   if(typeof expr === 'string') {
     return [ thunk(cont, lookup(env, expr)) ];
   }
@@ -100,6 +110,27 @@ var evalProcess = function(expr, env) {
       return [ thunk(evalProcess, expr.left, env), thunk(evalProcess, expr.right, env) ]; 
     case 'nil':
       return [];
+    case 'run':
+      return [ thunk(evalProcess, expr.process, env), thunk(evalProcess, expr.next, env) ];
+    case 'def':
+      var newEnv = { bindings: { }, outer: env };
+      var processes = [ thunk(evalProcess, expr.next, newEnv) ];
+      for(var i = 0; i < expr.channels.length; i++) {
+        newEnv.bindings[expr.channels[i]] = new Channel(expr.channel);
+        processes.push(thunk(evalProcess, expr.processes[i], newEnv));
+      }
+      return processes;
+    case 'if':
+      return [ thunk(evalExpr, expr.condition, env, function(val) {
+        var next = expr.whenFalse;
+        if(typeof val !== 'boolean') {
+          throw "Conditional value for if must be a boolean";
+        }
+        if(val) {
+          next = expr.whenTrue;
+        }
+        return [ thunk(evalProcess, next, env) ];
+      }) ];
   }
 };
 
@@ -132,9 +163,66 @@ var update = function(env, v, val) {
   return update(env.outer, v, val);
 }
 
+var createGlobalEnv = function() {
+  var env = { bindings: {}, outer: null };
+
+  var bindBinaryOp = function(name, func) {
+    env.bindings[name] = {
+      send: function(value, next) {
+        if(!Array.isArray(value) || value.length !== 3) {
+          throw "Value send to " + name + " must be a tuple containing three values.";
+        }
+        if(typeof value[2].send === 'undefined') {
+          throw "Third value sent to " + name + " must be a Writeable Channel.";
+        } 
+        return [ next ].concat( value[2].send(func(value[0], value[1]), null) );
+      }
+    };
+  };
+
+  var bindNumericOp = function(name, func) {
+    bindBinaryOp(name, function(v1, v2) {
+      if(typeof v1 !== 'number' || typeof v2 !== 'number') {
+        throw "The first and second arguments to " + name + " must be numbers.";
+      }
+      return func(v1, v2);
+    });
+  };
+
+  bindNumericOp('+', function(x, y) { return x + y; });
+  bindNumericOp('-', function(x, y) { return x - y; });
+  bindNumericOp('*', function(x, y) { return x * y; });
+  bindNumericOp('/', function(x, y) { return x / y; });
+  bindNumericOp('<', function(x, y) { return x < y; });
+  bindNumericOp('>', function(x, y) { return x > y; });
+  bindNumericOp('<=', function(x, y) { return x <= y; });
+  bindNumericOp('>=', function(x, y) { return x >= y; });
+
+  bindBinaryOp('==', deepEqual);
+  bindBinaryOp('/=', function(x, y) { return !deepEqual(x, y); });
+
+  return env;
+};
+
+var deepEqual = function(x, y) {
+  if( x === y ) {
+    return true;
+  }
+  if(Array.isArray(x) && Array.isArray(y) && x.length === y.length) {
+    for(var i = 0; i < x.length; i++) {
+      if(!deepEqual(x[i], y[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return false;
+};
+
 var stepStart = function(expr, env) {
+  var startEnv = env || { bindings: {}, outer: createGlobalEnv() };
   return {
-    data: [ thunk(evalProcess, expr, env) ],
+    data: [ thunk(evalProcess, expr, startEnv) ],
     done: false
   };
 };
@@ -167,4 +255,5 @@ if(typeof module !== 'undefined') {
   module.exports.step = step;
   module.exports.eval = eval;
   module.exports.evalString = evalString;
+  module.exports.createGlobalEnv = createGlobalEnv;
 }
