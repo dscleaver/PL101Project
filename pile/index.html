@@ -62,8 +62,8 @@ run log!x</textarea>
           log_console(value + "<br>");
         })
       },
-      outer: null
-    } 
+      outer: createGlobalEnv()
+    };
   };
   // After page load
   $(function() {
