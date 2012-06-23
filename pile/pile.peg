@@ -1,6 +1,44 @@
+{
+  var chain = function(decls, result) {
+      for(var i = decls.length - 1; i >= 0; i--) {
+        decls[i].next = result;
+        result = decls[i]; 
+      }
+      return result;
+  };
+}
+
 start =
-  _ procs:processes _
+  _ procs:declarations _
     { return procs; }
+
+declarations =
+  decls:declaration+
+    { return chain(decls, { tag: 'nil' }); }
+
+declaration = 
+  definitions
+/ "run " _ process:process _
+    { return { tag: 'run', process: process}; }
+/ "new " chan:id _ 
+    { return { tag: 'new', channel: chan }; }
+
+definitions =
+  "def " first:definition _ rest:("and " _ def:definition _ { return def; })*
+    {
+      var channels = [first.channel];
+      var processes = [first.process];
+      for(var i = 0; i < rest.length; i++) {
+        channels.push(rest[i].channel);
+        processes.push(rest[i].process);
+      }
+      return { tag: 'def', channels: channels, processes: processes };
+    }
+      
+
+definition =
+  chan:id _ pat:pat _ "=" _ proc:process 
+    { return { channel: chan, process: { tag: '?*', channel: chan, value: pat, next: proc} }; }
 
 processes = 
   left:process _ "|" _ right:processes
@@ -8,24 +46,37 @@ processes =
 / process
 
 process =
-  chan:id "!" val:val _ "." _ proc:process
+  "if " val:val _ "then" ws+ whenTrue:process ws+ "else" ws+ whenFalse:process
+  { return { tag: 'if', condition: val, whenTrue: whenTrue, whenFalse: whenFalse }; }
+/ chan:id "!" val:val _ "." _ proc:process
   { return { tag: '!', channel: chan, value: val, next: proc }; }
-/ chan:id  o1:"?" o2:"*"? val:pat  _ "." _ proc:process
+/ chan:id "!" val:val
+  { return { tag: '!', channel: chan, value: val, next: {tag: 'nil'} }; }
+/ chan:id  o1:"?" o2:"*"? val:pat  " =" _ proc:process
   { return { tag: o1 + o2, channel: chan, value: val, next: proc }; }
-/ "new(" _ chan:id _ ")" _ "." _ proc:process
-  { return { tag: 'new', channel: chan, next: proc }; }
-/ "(" _ procs:processes _ ")"
-  { return procs; }
 / "()"
   { return { tag: 'nil' }; }
+/ "(" _ decls:declaration+ proc:process _ ")"
+  { return chain(decls, proc); }
+/ "(" _ procs:processes _ ")"
+  { return procs; }
 
 val = 
-  id:id
+  "true"
+  { return true; }
+/ "false"
+  { return false; }
+/ numericLiteral
+/ id:id
   { return id; }
 / "[]"
   { return []; } 
 / "[" _ vals:val_list _ "]"
   { return vals; }
+
+numericLiteral =
+  firstDigit:[1-9] remaining:[0-9]*
+    { return parseInt(firstDigit + remaining.join('')); }
 
 space_val = ws+ val:val
   { return val; }
@@ -48,7 +99,7 @@ pat_list = first:pat rest:space_pat*
   { return [ first ].concat(rest); }
 
 validchar
-    = [0-9a-zA-Z_]//+-=@#$%^&/]
+    = [0-9a-zA-Z_+\-*/<>=]//@#$%^&/]
 
 id =
     chars:validchar+
