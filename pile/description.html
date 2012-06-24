@@ -1,0 +1,79 @@
+<html>
+<head><title>Pile Documentation</title></head>
+<body>
+<h2>Pile</h2>
+<p>Pile is a language based on the <a href="http://en.wikipedia.org/wiki/%CE%A0-calculus">Pi-Calculus</a>. It's design is based on the design of <a href="http://www.cis.upenn.edu/~bcpierce/papers/pict/Html/Pict.html">Pict</a> which is a strongly typed implementation of the Pi-Calculus. Pile is a dynamic language that adopts most of its syntax from Pict. The basic constructs of the Pi-Calculus are channels and processes. Channels represent synchronization points at which processes can exchange information. Pile extends the base Pi-Calculus by including integers, booleans, and tuples of values among the base types. All of these types are encodable in the Pi-Calculus but are treated specially by the compiler for convenience and speed.</p>
+<h3>Pile Declarations</h3>
+<p>A Pile program consists of a series of declarations described below:</p>
+<dl>
+  <dt><b>New</b> - <i>new &lt;name&gt;</i></dt>
+  <dd>Creates a new channel that will be available to the rest of the process at the name specified.</dd>
+  <dt><b>Run</b> - <i>run &lt;process&gt;</i></dt>
+  <dd>Starts the process in parallel to the execution of the rest of the declarations.</dd>
+  <dt><b>Def</b> - <i>def &lt;name&gt; &lt;pattern&gt; = &lt;process&gt;</i></dt>
+  <dd>Defines a persistent process listening on the channel defined by name. The variables bound in matching the pattern will be available to the process.</dd>
+  <dt><b>And</b> - <i>and &lt;name&gt; &lt;pattern&gt; = &lt;process&gt;</i></dt>
+  <dd>Follows a def or another and to define mutually recursive processes.</dd>
+</dl>
+<h3>Pile Processes</h3>
+<p>Pile processes are defined in the following forms:</p>
+<dl>
+  <dt><b>Send</b> - <i>&lt;name&gt;!&lt;value&gt;</i> or <i>&lt;name&gt;!&lt;value&gt;.&lt;process&gt;</i></dt>
+  <dd>Sends the specified value on a channel. If specified the remaining process will be executed after the send completes.</dd>
+  <dt><b>Receive</b> - <i>&lt;name&gt;?&lt;pattern&gt; = &lt;process&gt;</i></dt>
+  <dd>Receives a value on a channel, matching it to the pattern and binding any variables appropriately.</dd>
+  <dt><b>Replicating Receive</b> - <i>&lt;name&gt;?*&lt;pattern&gt; = &lt;process&gt;</i></dt>
+  <dd>Receives a value on the channel like Receive, but also replicates itself to receive multiple values from the channel.</dd>
+  <dt><b>Private Declarations</b> - <i>(&lt;declaration+&gt; &lt;process&gt;)</i></dt>
+  <dd>Executes all declarations before executing the process. All news and defs create channels that are private to the process.</dd>
+  <dt><b>Parallel</b> - <i>(&lt;process&gt; | &lt;process&gt;)</i>, <i>(&lt;process&gt; | &lt;process&gt; | &lt;process&gt;)</i>, etc.</dt>
+  <dd>Executes the specified processes in parallel with one another. Any number of processes can be specified separated by the |.</dd>
+  <dt><b>If</b> - <i>if &lt;value&gt; then &lt;process&gt; else &lt;process&gt;</i></dt>
+  <dd>Chooses a process to execute based on the boolean value.</dd>
+</dl>
+<h3>Pile Values</h3>
+<p>Pile defines the following values that can be used anywhere a value is required:</p>
+<dl>
+  <dt><b>Variables</b></dt>
+  <dd>Variables are bound with a new declaration or a patterned receive. They are composed of the following characters (0-9, a-z, A-Z, _, +, -, *, /, &lt;, &gt;, =, or %)</dd>
+  <dt><b>Numbers</b></dt>
+  <dd>Pile currently supports integer values.</dd>
+  <dt><b>Booleans</b></dt>
+  <dd>The boolean values true and false are supported.</dd>
+  <dt><b>Tuples</b></dt>
+  <dd>Surrounding any space separated list of values with [] creates a tuple. The empty tuple is also allowed and is useful for signaling.</dd>
+</dl>
+<h3>Pile Patterns</h3>
+<p>Pile patterns take the following forms:</p>
+<dl>
+  <dt><b>Variables</b></dt>
+  <dd>Binds any value to the variable.</dd>
+  <dt><b>Tuples</b></dt>
+  <dd>Matches any tuple of the same length where all patterns in the tuple match.</dd>
+</dl>
+<h3>Prelude</h3>
+<p>Pile defines several persistent processes and channels that can be used while building programs.</p>
+<dl>
+  <dt><b>Arithmetic Operators</b></dt>
+  <dd>All arithmetic operations can be sent a tuple that contains the two operands and a channel on which to receive the result. For example, <i>+![1 2 r]</i> will send 3 on the channel r. The supported operations are addition (+), subtraction (-), multiplication (*), division (/), and modulo division (%).</dd>
+  <dt><b>Arithmetic Comparisons</b></dt>
+  <dd>All arithmetic comparisons take two operands and a channel on which to receive the result. For example, <i>&lt;![1 2 r]</i> will send true on the channel r. The supported operations are less than (&lt;), less than or equal to (&lt;=), greater than (&gt;), and greater than or equal to (&gt;=)</dd>
+  <dt><b>Comparisons</b></dt>
+  <dd>In addition to the numerical comparisons, Pile supports equal (==) and not equal (/=). These operators work like the others, but compare any values.</dd>
+</dl>
+<h3>Web Tests</h3>
+<p>If you are interested, you can check out the <a href="test/">online webtests</a></p>
+<h3>Future Possibilities</h3>
+<p>There are many possible ways in which I could extend Pile. Below are the ideas foremost in my mind.</p>
+<dl>
+  <dt><b>Records</b></dt>
+  <dd>Pict adds optional labels to tuples and allows access to the value at a label using a dotted notation. This might not play nice with the dot syntax following sends, which is a feature that Pict does not have.</dd>
+  <dt><b>Structure Matching Patterns</b></dt>
+  <dd>Allows the binding of a variable to a full tuple as well as continuing to match the contents of the tuple. For example, <i>a@[b c]</i> binds b and c to the values in the tuple and a to the tuple itself.</dd>
+  <dt><b>Syntactic Sugar</b></dt>
+  <dd>Pict provides a nice syntactic sugar for calling operations like the numeric ones defined above without explicitly specifying the response channel. This syntactic sugar creates a syntax that resembles many functional languages but compiles down to the core pi-calculus.</dd>
+  <dt><b>Strong Typing</b></dt>
+  <dd>Pict also provides a strong type system and type inference. While I do find the idea of implementing the type system intriguing, Pile is more an experiment than an attempt to completely reimplement Pict.</dd>
+</dl>
+</body>
+</html>
