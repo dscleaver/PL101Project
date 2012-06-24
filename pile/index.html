@@ -28,12 +28,13 @@
 <body>
 <h2>Pile</h2>
 <p>Welcome to the Pile live test page. Simply type your Pile program into
-the textarea and press run. If you aren't familiar with Pile check out the <a href="doc.html">documentation</a>, or click an example to load it into the editor.</p>
+the textarea and press run. If you aren't familiar with Pile check out the <a href="description.html">documentation</a>, or click an example to load it into the editor.</p>
 <h3>Live Test</h3>
-Examples: <a href="" onclick="input.setValue($('#churchb').text()); return false;">Encoding Booleans</a><a href="" onclick="input.setValue($('#seive').text()); return false;">Seive of Eratosthenes</a><br>
+Examples: <a href="" onclick="input.setValue($('#churchb').text()); return false;">Encoding Booleans</a>
+<a href="" onclick="input.setValue($('#sieve').text()); return false;">Sieve of Eratosthenes</a><br>
 
-<input id="submitbutton" type="button" value="Run" /><div id="console" style="display: inline;"></div>
-<textarea id="codeInput" style="width:800px; height:400px;">
+<input id="submitbutton" type="button" value="Run" /> <div id="console" style="display:inline;"></div>
+<textarea id="codeInput" style="width: 75%; height:400px;">
 new x
 run log!x</textarea>
 <script>
@@ -59,7 +60,7 @@ run log!x</textarea>
   var newEnv = function() {
     return {  bindings: {
         log: new BuiltInChannel(function(value) {
-          log_console(value + "<br>");
+          log_console(value + " ");
         })
       },
       outer: createGlobalEnv()
@@ -99,26 +100,30 @@ run (
   b![is_true is_false] |
   is_true?[] = log![is_true] |
   is_false?[] = log![is_false]))</pre>
-<pre id="seive" class="example">def primes[r] = 
+<pre id="sieve" class="example">def stream_primes[r] = 
   (def nums[n out] = (new r1 
      ( +![n 1 r1] | 
-       r1?n1 = ( out!n1 | 
-                 nums![n1 out] )))
+       r1?n1 = out!n1 . nums![n1 out] ))
    def filter[n in out] = 
      in?m = (new r1 
        run %![m n r1] 
        new z 
        run r1?remainder = /=![remainder 0 z] 
        z?is_not_zero = if is_not_zero then out!m . filter![n in out] else filter![n in out])
-   new c  
+   new c new loop 
    run nums![1 c]
-   new loop
    run loop!c
    loop?*in = 
      in?x = r!x.(new c1 (filter![x in c1] | loop!c1)))
 
-new values
-run primes![values]
-run (values?v = log!v | values?v = log!v | values?v = log!v)</pre>   
+new primes run stream_primes![primes]
+
+def take[n stream out] =
+   (new r new r2
+    run &gt;![n 0 r]
+    run -![n 1 r2]
+    r?more = if more then (stream?prime = out!prime | r2?n1 = take![n1 stream out]) else ())
+    
+run take![20 primes log]</pre>   
 </body>
 </html>
